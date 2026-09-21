@@ -8,6 +8,9 @@ module.exports = {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: 'postgres',
+    define: {
+      underscored: true,
+    },
   },
   test: {
     username: process.env.DB_USER,
@@ -16,9 +19,15 @@ module.exports = {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: 'postgres',
+    define: {
+      underscored: true,
+    },
   },
   production: {
     use_env_variable: 'DATABASE_URL',
     dialect: 'postgres',
+    define: {
+      underscored: true,
+    },
   },
 }
