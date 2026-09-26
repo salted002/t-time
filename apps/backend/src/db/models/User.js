@@ -9,8 +9,9 @@ module.exports = (sequelize, DataTypes) => {
       },
       academyId: { type: DataTypes.UUID, allowNull: false },
       name: { type: DataTypes.STRING, allowNull: false },
-      email: { type: DataTypes.STRING, allowNull: false, unique: true },
+      email: { type: DataTypes.STRING, allowNull: false },
       passwordHash: { type: DataTypes.STRING, allowNull: false },
+      deleted_at: { type: DataTypes.DATE, allowNull: true },
     },
     {
       tableName: 'users',
