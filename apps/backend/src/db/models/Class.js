@@ -8,8 +8,8 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: DataTypes.UUIDV4,
       },
       academyId: { type: DataTypes.UUID, allowNull: false },
-      name: { type: dataTypes.STRING, allowNull: false },
-      teacherName: { type: dataTypes.STRING, allowNull: true },
+      name: { type: DataTypes.STRING, allowNull: false },
+      teacherName: { type: DataTypes.STRING, allowNull: true },
     },
     {
       tableName: 'classes',
@@ -22,4 +22,5 @@ module.exports = (sequelize, DataTypes) => {
     Class.hasMany(models.Student, { foreignKey: 'classId', onDelete: 'SET NULL' })
     Class.hasMany(models.Exam, { foreignKey: 'classId', onDelete: 'SET NULL' })
   }
+  return Class
 }
