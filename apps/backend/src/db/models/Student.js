@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       academyId: { type: DataTypes.UUID, allowNull: false },
       name: { type: DataTypes.STRING, allowNull: false },
-      classId: { type: Datatype.UUID, allowNull: true },
+      classId: { type: DataTypes.UUID, allowNull: true },
       status: {
         type: DataTypes.ENUM('재원', '휴원', '퇴원'),
         allowNull: false,
