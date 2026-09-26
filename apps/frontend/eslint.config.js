@@ -19,4 +19,11 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // shadcn/ui 파일은 컴포넌트와 variant 함수(buttonVariants 등)를 함께 export하는 구조라 이 규칙에서 제외
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])
