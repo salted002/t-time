@@ -100,11 +100,9 @@ export default function SignupStep1Page({ academyInfo, onNext, onCancel }: Signu
   const onSubmit = handleSubmit(async (data) => {
     setIsChecking(true);
     try {
-      const response = await api.post<AvailabilityResponse>('/academies/availability', null, {
-        params: {
-          slug: data.academySlug,
-          businessNumber: data.businessRegistrationNumber,
-        },
+      const response = await api.post<AvailabilityResponse>('/academies/availability', {
+        slug: data.academySlug,
+        businessNumber: data.businessRegistrationNumber,
       });
 
       const { available } = response.data;
@@ -242,8 +240,13 @@ export default function SignupStep1Page({ academyInfo, onNext, onCancel }: Signu
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="representativeName">대표자명</Label>
+            <Label htmlFor="representativeName" className="gap-1">
+              대표자명 <RequiredMark />
+            </Label>
             <Input id="representativeName" placeholder="김선주" {...register('representativeName')} />
+            {errors.representativeName && (
+              <p className="text-xs text-red-500">{errors.representativeName.message}</p>
+            )}
           </div>
 
           <div className="space-y-1.5">
