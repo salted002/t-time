@@ -7,6 +7,7 @@ import SignupPage from '@/pages/auth/SignupPage'
 import LoginPage from '@/pages/auth/loginPage'
 import StudentsPage from '@/pages/students/StudentsPage'
 import ProtectedRoute from '@/router/ProtectedRoute'
+import ComponentsPage from './pages/dev/ComponentsPage'
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="students" element={<StudentsPage />} />
           <Route path="exams" element={<div>시험 관리 (임시)</div>} />
         </Route>
+        <Route path="/dev/components" element={<ComponentsPage />} />
         <Route path="*" element={<Navigate to="/signup?step=academy" replace />} />
       </Routes>
       <Toaster />
