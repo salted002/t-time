@@ -1,12 +1,13 @@
 import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import SignupStep1Page from '@/pages/auth/SignupStep1Page';
-import SignupStep2Page from '@/pages/auth/SignupStep2Page';
-import SignupStep3Page from '@/pages/auth/SignupStep3Page';
+import SignupAcademyStep from '@/components/auth/SignupAcademyStep';
+import SignupAccountStep from '@/components/auth/SignupAccountStep';
+import SignupCompleteStep from '@/components/auth/SignupCompleteStep';
 import { useSignupState } from '@/types/useSignupStore';
 
 interface SignupCompleteState {
   academyName: string;
   message: string;
+  slug: string;
 }
 
 export default function SignupPage() {
@@ -19,7 +20,7 @@ export default function SignupPage() {
   switch (step) {
     case 'account':
       return (
-        <SignupStep2Page
+        <SignupAccountStep
           academyInfo={academyInfo}
           onPrev={() => navigate('/signup?step=academy')}
           onSuccess={(result) => {
@@ -34,17 +35,17 @@ export default function SignupPage() {
         return <Navigate to="/signup?step=academy" replace />;
       }
       return (
-        <SignupStep3Page
+        <SignupCompleteStep
           academyName={state.academyName}
           message={state.message}
-          onGoToLogin={() => navigate('/login')}
+          onContinue={() => navigate(`/${state.slug}/students`)}
         />
       );
     }
     case 'academy':
     default:
       return (
-        <SignupStep1Page
+        <SignupAcademyStep
           academyInfo={academyInfo}
           onNext={(data) => {
             setAcademyInfo(data);
