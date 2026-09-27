@@ -30,7 +30,7 @@ async function login(email, password) {
 
   const token = issueAcademyToken({ userId: user.id, academyId: academy.id, email: user.email });
 
-  return { user, token };
+  return { user, token, academy };
 }
 
 module.exports = { login };
