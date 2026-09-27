@@ -1,15 +1,13 @@
-import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import type { FieldErrors } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
-import { Check } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+import type { FieldErrors } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import axios from 'axios'
+import { Link, useNavigate } from 'react-router-dom'
+import { Check } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,54 +16,48 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { LOGIN_FIELD_ORDER, loginSchema } from '@/types/auth';
-import type { LoginFormValues } from '@/types/auth';
+} from '@/components/ui/alert-dialog'
+import { LOGIN_FIELD_ORDER, loginSchema } from '@/types/auth'
+import type { LoginFormValues } from '@/types/auth'
+import { FormField } from '@/components/common/FormField'
 
 export default function LoginPage() {
-  const navigate = useNavigate();
-  const { login } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorPopup, setErrorPopup] = useState<{ title: string; messages: string[] } | null>(
-    null
-  );
+  const navigate = useNavigate()
+  const { login } = useAuth()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorPopup, setErrorPopup] = useState<{ title: string; messages: string[] } | null>(null)
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors },
-  } = useForm<LoginFormValues>({
+  const { handleSubmit, control } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { rememberMe: true },
-  });
+  })
 
   const handleInvalid = (formErrors: FieldErrors<LoginFormValues>) => {
     const messages = LOGIN_FIELD_ORDER.map((field) => formErrors[field]?.message).filter(
-      (message): message is string => Boolean(message)
-    );
+      (message): message is string => Boolean(message),
+    )
     if (messages.length > 0) {
-      setErrorPopup({ title: '입력 확인이 필요합니다', messages });
+      setErrorPopup({ title: '입력 확인이 필요합니다', messages })
     }
-  };
+  }
 
   const onSubmit = handleSubmit(async (data) => {
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
-      const loggedInUser = await login(data.email, data.password, data.rememberMe);
-      navigate(`/${loggedInUser.academySlug}/students`);
+      const loggedInUser = await login(data.email, data.password, data.rememberMe)
+      navigate(`/${loggedInUser.academySlug}/students`)
     } catch (error) {
       const message = axios.isAxiosError(error)
         ? (error.response?.data as { message?: string } | undefined)?.message
-        : undefined;
+        : undefined
       setErrorPopup({
         title: '로그인에 실패했습니다',
         messages: [message ?? '이메일 또는 비밀번호를 확인해주세요.'],
-      });
+      })
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  }, handleInvalid);
+  }, handleInvalid)
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
@@ -90,43 +82,29 @@ export default function LoginPage() {
 
       <div className="flex flex-1 items-center justify-center bg-white px-6 py-16">
         <form onSubmit={onSubmit} className="w-full max-w-[320px] space-y-5">
-          <div className="space-y-1.5">
-            <Label htmlFor="email">이메일(로그인 아이디)</Label>
-            <Input id="email" type="email" placeholder="admin@hanbit.kr" {...register('email')} />
-            {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
-          </div>
+          {/* 이메일 필드 */}
+          <FormField control={control} name="email" label="이메일(로그인 아이디)" required>
+            {(field) => <Input {...field} type="email" placeholder="admin@hanbit.kr" />}
+          </FormField>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="password">비밀번호</Label>
-            <Input id="password" type="password" {...register('password')} />
-            {errors.password && (
-              <p className="text-xs text-red-500">{errors.password.message}</p>
-            )}
-          </div>
+          {/* 비밀번호 필드 */}
+          <FormField control={control} name="password" label="비밀번호" required>
+            {(field) => <Input {...field} type="password" />}
+          </FormField>
 
-          <div className="flex items-center gap-2">
-            <Controller
-              control={control}
-              name="rememberMe"
-              render={({ field }) => (
-                <Checkbox
-                  id="rememberMe"
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              )}
-            />
-            <Label htmlFor="rememberMe" className="text-sm font-normal text-gray-700">
-              로그인 상태 유지
-            </Label>
-          </div>
-
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-[#3F6D59] text-white hover:bg-[#375D4C]"
-          >
+          <Button type="submit" disabled={isSubmitting} className="w-full">
             {isSubmitting ? '로그인 중...' : '로그인'}
+          </Button>
+
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">또는</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          {/* TODO(REQ-ACC-05): 데모 계정 로그인 연동 — 백엔드 DEMO_ACCOUNT_EMAIL/시더 준비되면 연결 */}
+          <Button type="button" variant="outline" className="w-full">
+            데모 계정으로 둘러보기
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">
@@ -155,5 +133,5 @@ export default function LoginPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  )
 }
