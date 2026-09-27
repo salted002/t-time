@@ -4,6 +4,9 @@ import { StatusBadge } from '@/components/common/StatusBadge'
 import { DataTable, type Column } from '@/components/templates/DataTable'
 import { STUDENT_STATUS_TONE } from '@/lib/constants'
 import type { Student } from '@/types/student'
+import { FormDialogDemo } from '@/pages/dev/FormDialogDemo'
+import { Stage4Demo } from './Stage4Demo'
+import { Stage5Demo } from '@/pages/dev/Stage5Demo'
 
 const MOCK_STUDENTS: Student[] = [
   {
@@ -102,6 +105,25 @@ export default function ComponentsPage() {
       <section className="space-y-3">
         <h2 className="text-base font-semibold">DataTable · 로딩</h2>
         <DataTable columns={studentColumns} rows={[]} rowKey={(s) => s.id} loading />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-base font-semibold">FormDialog · FormField · DatePicker</h2>
+        <FormDialogDemo />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-base font-semibold">
+          useConfirm · SectionCard · InfoGrid · ProfileDropdown
+        </h2>
+        <Stage4Demo />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-base font-semibold">
+          SlidePanel · LockedFeatureOverlay · Stepper · ChipList
+        </h2>
+        <Stage5Demo />
       </section>
     </div>
   )

@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
+import { Building2 } from 'lucide-react'
 import {
   Users,
   FileText,
@@ -43,5 +44,12 @@ export const ACADEMY_NAV: NavSection[] = [
       { label: '구독 관리', to: 'subscription', icon: CreditCard },
       { label: '학원 설정', to: 'settings', icon: Settings },
     ],
+  },
+]
+
+export const ADMIN_NAV: NavSection[] = [
+  {
+    label: '운영자 콘솔',
+    items: [{ label: '학원 관리', to: 'academies', icon: Building2 }],
   },
 ]

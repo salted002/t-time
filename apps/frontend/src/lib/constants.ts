@@ -7,3 +7,6 @@ export const STUDENT_STATUS_TONE = {
   휴원: 'warning',
   퇴원: 'muted',
 } as const satisfies Record<StudentStatus, Tone>
+
+// TODO: 운영자 문의 메일 주소 확정되면 교체
+export const SUPPORT_EMAIL = 'support@t-time.kr'

@@ -1,4 +1,4 @@
-import { Link, matchPath, useLocation, useParams } from 'react-router-dom'
+import { Link, matchPath, useLocation } from 'react-router-dom'
 
 import {
   Sidebar,
@@ -17,12 +17,13 @@ import type { NavSection } from '@/lib/navigation'
 
 interface AppSidebarProps {
   sections: NavSection[]
+  /** 메뉴 경로 앞에 붙일 주소. 학원: `/hanbit`, 운영자: `/admin` */
+  basePath: string
   brand: { name: string; subtitle: string; logoUrl?: string | null }
-  account: { name: string }
+  account: { name: string; role: string }
 }
 
-export function AppSidebar({ sections, brand, account }: AppSidebarProps) {
-  const { slug } = useParams()
+export function AppSidebar({ sections, basePath, brand, account }: AppSidebarProps) {
   const { pathname } = useLocation()
 
   return (
@@ -47,7 +48,7 @@ export function AppSidebar({ sections, brand, account }: AppSidebarProps) {
             <SidebarGroupContent>
               <SidebarMenu>
                 {section.items.map((item) => {
-                  const href = `/${slug}/${item.to}`
+                  const href = `${basePath}/${item.to}`
                   const isActive = matchPath({ path: href, end: false }, pathname) !== null
 
                   return (
@@ -70,7 +71,9 @@ export function AppSidebar({ sections, brand, account }: AppSidebarProps) {
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="px-2 py-3 text-sm">{account.name} · 관리자</div>
+        <div className="px-2 py-3 text-sm">
+          {account.name} · {account.role}
+        </div>
       </SidebarFooter>
     </Sidebar>
   )
