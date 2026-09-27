@@ -23,7 +23,7 @@ function readUser(): User | null {
 
 export interface AuthContextValue {
   user: User | null;
-  login: (email: string, password: string, rememberMe: boolean) => Promise<void>;
+  login: (email: string, password: string, rememberMe: boolean) => Promise<User>;
   logout: () => void;
 }
 
@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem(USER_KEY, JSON.stringify(response.data.user));
       setUser(response.data.user);
+      return response.data.user;
     },
     logout: () => {
       clearToken();

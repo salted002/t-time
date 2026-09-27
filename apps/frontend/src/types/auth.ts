@@ -4,6 +4,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  academySlug: string;
 }
 
 export const loginSchema = z.object({
