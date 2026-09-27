@@ -1,5 +1,5 @@
-import 'dotenv/config'
-import app from './app'
+require('dotenv/config')
+const app = require('./app')
 
 const PORT = process.env.PORT || 4000
 app.listen(PORT, () => console.log(`backend on :${PORT}`))

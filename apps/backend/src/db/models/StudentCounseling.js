@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
       studentId: { type: DataTypes.UUID, allowNull: false },
       counselingDate: { type: DataTypes.DATEONLY, allowNull: false },
       target: {
-        type: DataTypes.ENUM('학생', '보호자'),
+        type: DataTypes.ENUM('학생', '학부모'),
         allowNull: false,
         defaultValue: '학생',
       },

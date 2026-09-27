@@ -1,16 +1,13 @@
-import js from '@eslint/js'
-import tseslint from 'typescript-eslint'
-import globals from 'globals'
+const js = require('@eslint/js')
+const globals = require('globals')
 
-export default tseslint.config(
+module.exports = [
   js.configs.recommended,
-  ...tseslint.configs.recommended,
   {
     languageOptions: {
-      globals: globals.node, // require, process 등 Node 전역 인식
+      sourceType: 'commonjs', // require/module.exports 문법으로 해석
+      globals: globals.node, // process, __dirname 등 Node 전역 인식
     },
   },
-  {
-    ignores: ['dist/', 'node_modules/'],
-  },
-)
+  { ignores: ['node_modules/', 'uploads/'] },
+]

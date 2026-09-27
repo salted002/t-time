@@ -39,7 +39,7 @@ module.exports = (sequelize, DataTypes) => {
     Academy.hasMany(models.Exam, { foreignKey: 'academyId' })
     Academy.hasMany(models.Report, { foreignKey: 'academyId' })
     Academy.hasMany(models.SmsSendLog, { foreignKey: 'academyId' })
-    Academy.hasMany(models.SmsTemplates, { foreignKey: 'academyId' })
+    Academy.hasMany(models.SmsTemplate, { foreignKey: 'academyId' })
   }
   return Academy
 }
