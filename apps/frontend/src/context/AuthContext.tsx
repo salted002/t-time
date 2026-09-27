@@ -23,7 +23,8 @@ function readUser(): User | null {
 
 export interface AuthContextValue {
   user: User | null;
-  login: (email: string, password: string, rememberMe: boolean) => Promise<void>;
+  login: (email: string, password: string, rememberMe: boolean) => Promise<User>;
+  setSession: (user: User, token: string, rememberMe: boolean) => void;
   logout: () => void;
 }
 
@@ -33,16 +34,22 @@ export const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => (getToken() ? readUser() : null));
 
+  const persistSession = (nextUser: User, token: string, rememberMe: boolean) => {
+    setToken(token, rememberMe);
+    const storage = rememberMe ? localStorage : sessionStorage;
+    storage.setItem(USER_KEY, JSON.stringify(nextUser));
+    setUser(nextUser);
+  };
+
   const value: AuthContextValue = {
     user,
     login: async (email, password, rememberMe) => {
       const response = await api.post<LoginResponse>('/auth/login', { email, password });
 
-      setToken(response.data.token, rememberMe);
-      const storage = rememberMe ? localStorage : sessionStorage;
-      storage.setItem(USER_KEY, JSON.stringify(response.data.user));
-      setUser(response.data.user);
+      persistSession(response.data.user, response.data.token, rememberMe);
+      return response.data.user;
     },
+    setSession: persistSession,
     logout: () => {
       clearToken();
       localStorage.removeItem(USER_KEY);

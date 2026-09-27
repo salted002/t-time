@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const db = require('../db/models');
 const { hashPassword, verifyPassword } = require('../utils/passwordUtil');
+const { issueAcademyToken } = require('../utils/jwtUtil');
 
 function throwError(statusCode, message) {
   const error = new Error(message);
@@ -22,9 +23,17 @@ async function checkAvailability(slug, businessNumber) {
     businessNumberAvailable = !existingBusinessNumber;
   }
 
+  const slugAvailable = !existingSlug;
+
   return {
-    slug: !existingSlug,
-    businessNumber: businessNumberAvailable,
+    available: {
+      slug: slugAvailable,
+      businessNumber: businessNumberAvailable,
+    },
+    reasons: {
+      slug: slugAvailable ? null : '이미 등록된 슬러그입니다.',
+      businessNumber: businessNumberAvailable ? null : '이미 등록된 사업자번호입니다.',
+    },
   };
 }
 
@@ -90,7 +99,13 @@ async function signup(signupData, logoFilename) {
     return { academy, user };
   });
 
-  return { academy: result.academy, user: result.user };
+  const token = issueAcademyToken({
+    userId: result.user.id,
+    academyId: result.academy.id,
+    email: result.user.email,
+  });
+
+  return { academy: result.academy, user: result.user, token };
 }
 
 async function updateAcademy(academyId, updateData, file) {

@@ -52,8 +52,8 @@ export default function LoginPage() {
   const onSubmit = handleSubmit(async (data) => {
     setIsSubmitting(true);
     try {
-      await login(data.email, data.password, data.rememberMe);
-      navigate('/students');
+      const loggedInUser = await login(data.email, data.password, data.rememberMe);
+      navigate(`/${loggedInUser.academySlug}/students`);
     } catch (error) {
       const message = axios.isAxiosError(error)
         ? (error.response?.data as { message?: string } | undefined)?.message

@@ -2,17 +2,17 @@ import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SignupStepIndicator } from '@/pages/auth/SignupStepIndicator';
 
-interface SignupStep3PageProps {
+interface SignupCompleteStepProps {
   academyName: string;
   message: string;
-  onGoToLogin?: () => void;
+  onContinue?: () => void;
 }
 
-export default function SignupStep3Page({
+export default function SignupCompleteStep({
   academyName,
   message,
-  onGoToLogin,
-}: SignupStep3PageProps) {
+  onContinue,
+}: SignupCompleteStepProps) {
   return (
     <div className="min-h-screen bg-[#F3F1E9] px-6 py-10">
       <div className="mx-auto w-full max-w-[520px] rounded-2xl bg-white p-10 shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
@@ -27,10 +27,10 @@ export default function SignupStep3Page({
 
           <Button
             type="button"
-            onClick={onGoToLogin}
+            onClick={onContinue}
             className="mt-8 w-full bg-[#3F6D59] text-white hover:bg-[#375D4C]"
           >
-            로그인 화면으로 이동 →
+            학생 관리 시작하기 →
           </Button>
         </div>
       </div>

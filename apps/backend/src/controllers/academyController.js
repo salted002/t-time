@@ -1,13 +1,14 @@
 const academyService = require('../services/academyService');
 
 async function checkAvailability(req, res) {
-  const { slug, businessNumber } = req.query;
+  const { slug, businessNumber } = req.body;
 
-  const available = await academyService.checkAvailability(slug, businessNumber);
+  const { available, reasons } = await academyService.checkAvailability(slug, businessNumber);
 
   return res.status(200).json({
     success: true,
     available,
+    reasons,
     message: '확인 완료',
   });
 }
@@ -15,7 +16,7 @@ async function checkAvailability(req, res) {
 async function signup(req, res) {
   const logoFilename = req.file ? req.file.filename : null;
 
-  const { academy, user } = await academyService.signup(req.body, logoFilename);
+  const { academy, user, token } = await academyService.signup(req.body, logoFilename);
 
   return res.status(201).json({
     success: true,
@@ -38,6 +39,7 @@ async function signup(req, res) {
       email: user.email,
       createdAt: user.createdAt,
     },
+    token,
     message: '학원 계정이 개설되었습니다.',
   });
 }

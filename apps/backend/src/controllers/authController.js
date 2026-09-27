@@ -3,7 +3,7 @@ const authService = require('../services/authService');
 async function login(req, res) {
   const { email, password } = req.body;
 
-  const { user, token } = await authService.login(email, password);
+  const { user, token, academy } = await authService.login(email, password);
 
   return res.status(200).json({
     success: true,
@@ -11,6 +11,7 @@ async function login(req, res) {
       id: user.id,
       name: user.name,
       email: user.email,
+      academySlug: academy.slug,
     },
     token,
     message: '로그인되었습니다.',
