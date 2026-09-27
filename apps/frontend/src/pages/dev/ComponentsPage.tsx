@@ -7,6 +7,7 @@ import type { Student } from '@/types/student'
 import { FormDialogDemo } from '@/pages/dev/FormDialogDemo'
 import { Stage4Demo } from './Stage4Demo'
 import { Stage5Demo } from '@/pages/dev/Stage5Demo'
+import { ChartsDemo } from '@/pages/dev/ChartsDemo'
 
 const MOCK_STUDENTS: Student[] = [
   {
@@ -124,6 +125,11 @@ export default function ComponentsPage() {
           SlidePanel · LockedFeatureOverlay · Stepper · ChipList
         </h2>
         <Stage5Demo />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-base font-semibold">차트</h2>
+        <ChartsDemo />
       </section>
     </div>
   )

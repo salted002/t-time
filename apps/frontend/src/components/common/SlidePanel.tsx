@@ -45,7 +45,7 @@ export function SlidePanel({
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
         side="right"
-        className="gap-0 p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-none md:data-[side=right]:w-[55vw] md:min-w-[560px]"
+        className="gap-0 p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-none md:data-[side=right]:w-[55vw] md:min-w-140"
       >
         <SheetHeader className="border-b px-6 py-5 pr-12">
           <SheetTitle className="text-base font-semibold">{title}</SheetTitle>
