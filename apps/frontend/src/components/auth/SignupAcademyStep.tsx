@@ -24,6 +24,7 @@ import type { AcademyInfoFormValues } from '@/types/academy';
 interface AvailabilityResponse {
   success: boolean;
   available: { slug: boolean; businessNumber: boolean };
+  reasons: { slug: string | null; businessNumber: string | null };
   message: string;
 }
 
@@ -31,13 +32,13 @@ function RequiredMark() {
   return <span className="text-red-500">*</span>;
 }
 
-interface SignupStep1PageProps {
+interface SignupAcademyStepProps {
   academyInfo?: AcademyInfoFormValues | null;
   onNext?: (data: AcademyInfoFormValues) => void;
   onCancel?: () => void;
 }
 
-export default function SignupStep1Page({ academyInfo, onNext, onCancel }: SignupStep1PageProps) {
+export default function SignupAcademyStep({ academyInfo, onNext, onCancel }: SignupAcademyStepProps) {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [errorPopup, setErrorPopup] = useState<{ title: string; messages: string[] } | null>(
@@ -105,12 +106,10 @@ export default function SignupStep1Page({ academyInfo, onNext, onCancel }: Signu
         businessNumber: data.businessRegistrationNumber,
       });
 
-      const { available } = response.data;
-      const messages: string[] = [];
-      if (!available.slug) messages.push('입력한 학원슬러그가 사용 중으로 재입력을 하세요');
-      if (!available.businessNumber) {
-        messages.push('입력한 사업자등록번호가 사용 중으로 재입력을 하세요');
-      }
+      const { reasons } = response.data;
+      const messages = [reasons.slug, reasons.businessNumber].filter(
+        (reason): reason is string => Boolean(reason)
+      );
 
       if (messages.length > 0) {
         setErrorPopup({ title: '확인이 필요합니다', messages });

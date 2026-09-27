@@ -4,6 +4,7 @@ import type { FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
 import { api } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,8 +25,9 @@ import type { AcademyInfoFormValues } from '@/types/academy';
 
 interface SignupResponse {
   success: boolean;
-  academy: { id: string; name: string };
+  academy: { id: string; name: string; slug: string };
   user: { id: string; name: string; email: string };
+  token: string;
   message: string;
 }
 
@@ -33,17 +35,18 @@ function RequiredMark() {
   return <span className="text-red-500">*</span>;
 }
 
-interface SignupStep2PageProps {
+interface SignupAccountStepProps {
   academyInfo: AcademyInfoFormValues | null;
   onPrev?: () => void;
-  onSuccess?: (result: { academyName: string; message: string }) => void;
+  onSuccess?: (result: { academyName: string; message: string; slug: string }) => void;
 }
 
-export default function SignupStep2Page({
+export default function SignupAccountStep({
   academyInfo,
   onPrev,
   onSuccess,
-}: SignupStep2PageProps) {
+}: SignupAccountStepProps) {
+  const { setSession } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorPopup, setErrorPopup] = useState<{ title: string; messages: string[] } | null>(
     null
@@ -94,8 +97,11 @@ export default function SignupStep2Page({
       formData.append('passwordConfirm', data.passwordConfirm);
 
       const response = await api.post<SignupResponse>('/academies/signup', formData);
+      const { academy, user, token } = response.data;
 
-      onSuccess?.({ academyName: response.data.academy.name, message: response.data.message });
+      setSession({ id: user.id, name: user.name, email: user.email, academySlug: academy.slug }, token, true);
+
+      onSuccess?.({ academyName: academy.name, message: response.data.message, slug: academy.slug });
     } catch (error) {
       const message = axios.isAxiosError(error)
         ? (error.response?.data as { message?: string } | undefined)?.message
