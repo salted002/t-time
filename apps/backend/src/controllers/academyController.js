@@ -1,7 +1,7 @@
 const academyService = require('../services/academyService');
 
 async function checkAvailability(req, res) {
-  const { slug, businessNumber } = req.query;
+  const { slug, businessNumber } = req.body;
 
   const available = await academyService.checkAvailability(slug, businessNumber);
 
