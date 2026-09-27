@@ -1,8 +1,8 @@
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth'
+import { Button } from '@/components/ui/button'
 
 export default function StudentsPage() {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth()
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F3F1E9] p-6">
@@ -14,5 +14,5 @@ export default function StudentsPage() {
         </Button>
       </div>
     </div>
-  );
+  )
 }
