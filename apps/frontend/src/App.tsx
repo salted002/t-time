@@ -1,4 +1,10 @@
 import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { Toaster } from '@/components/ui/sonner'
+import { AppLayout } from '@/components/layout/AppLayout'
+import { AdminLayout } from '@/components/layout/AdminLayout'
+
 import SignupPage from '@/pages/auth/SignupPage';
 import LoginPage from '@/pages/auth/loginPage';
 import StudentListPage from '@/pages/students/StudentListPage';
@@ -9,15 +15,19 @@ function AcademyRoot() {
   const { slug } = useParams<{ slug: string }>();
   return <Navigate to={`/${slug}/students`} replace />;
 }
+import ComponentsPage from './pages/dev/ComponentsPage'
+import { ConfirmProvider } from './components/common/ConfirmDialog'
 
 function App() {
   return (
-    <Routes>
-      <Route path="/signup" element={<SignupPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route
-        path="/:slug/students"
-        element={
+    <TooltipProvider>
+      <ConfirmProvider>
+        <Routes>
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/:slug/students"
+            element={
           <ProtectedRoute>
             <StudentListPage />
           </ProtectedRoute>
@@ -26,13 +36,26 @@ function App() {
       <Route
         path="/:slug"
         element={
-          <ProtectedRoute>
-            <AcademyRoot />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/signup?step=academy" replace />} />
-    </Routes>
+              <ProtectedRoute>
+                <AcademyRoot />
+              </ProtectedRoute>
+            }
+          />
+          {/* 레이아웃 확인용 임시 페이지 (localhost:5173/hanbit/exams) */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="academies" element={<div>학원 목록 (임시)</div>} />
+          </Route>
+          <Route path="/:slug" element={<AppLayout />}>
+            <Route path="exams" element={<div>시험 관리 (임시)</div>} />
+          </Route>
+          <Route path="/dev/components" element={<ComponentsPage />} />
+
+          <Route path="*" element={<Navigate to="/signup?step=academy" replace />} />
+        </Routes>
+      </ConfirmProvider>
+
+      <Toaster />
+    </TooltipProvider>
   );
 }
 
