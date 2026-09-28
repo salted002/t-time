@@ -1,0 +1,8 @@
+const express = require('express');
+const router = express.Router();
+const messageLogController = require('../controllers/messageLogController');
+const { authenticateAcademy } = require('../middlewares/authAcademy');
+
+router.get('/', authenticateAcademy, messageLogController.list);
+
+module.exports = router;
