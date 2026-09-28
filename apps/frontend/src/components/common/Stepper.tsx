@@ -11,7 +11,7 @@ interface StepperProps {
 
 export function Stepper({ steps, current }: StepperProps) {
   return (
-    <ol className="flex items-center">
+    <ol className="flex w-full items-center">
       {steps.map((label, index) => {
         const done = index < current
         const active = index === current
@@ -21,15 +21,17 @@ export function Stepper({ steps, current }: StepperProps) {
             {index > 0 && (
               <li
                 aria-hidden
-                className={cn('mx-2 h-px w-10', done || active ? 'bg-ring' : 'bg-border')}
+                className={cn(
+                  'mx-2 h-px min-w-6 flex-1',
+                  done || active ? 'bg-primary' : 'bg-border',
+                )}
               />
             )}
             <li aria-current={active ? 'step' : undefined} className="flex items-center gap-2">
               <span
                 className={cn(
                   'flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums',
-                  done && 'bg-ring text-primary-foreground',
-                  active && 'bg-primary text-primary-foreground',
+                  (done || active) && 'bg-primary text-primary-foreground',
                   !done && !active && 'bg-muted text-muted-foreground',
                 )}
               >
