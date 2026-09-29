@@ -18,4 +18,16 @@ async function login(req, res) {
   });
 }
 
-module.exports = { login };
+async function changePassword(req, res) {
+  const { userId, academyId } = req.academy;
+  const { currentPassword, newPassword, newPasswordConfirm } = req.body;
+
+  await authService.changePassword(userId, academyId, currentPassword, newPassword, newPasswordConfirm);
+
+  return res.status(200).json({
+    success: true,
+    message: '관리자 비밀번호를 변경하였습니다.',
+  });
+}
+
+module.exports = { login, changePassword };

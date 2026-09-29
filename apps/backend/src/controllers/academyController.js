@@ -69,10 +69,9 @@ async function updateAcademy(req, res) {
 }
 
 async function deleteAcademy(req, res) {
-  const { userId, academyId } = req.academy;
-  const { password } = req.body;
+  const { academyId } = req.academy;
 
-  await academyService.deleteAcademy(userId, academyId, password);
+  await academyService.deleteAcademy(academyId);
 
   return res.status(200).json({
     success: true,
