@@ -9,7 +9,6 @@ const studentRouter = require('./routes/studentRoutes')
 const classRouter = require('./routes/classRoutes')
 const examRouter = require('./routes/examRoutes')
 const messageLogRouter = require('./routes/messageLogRoutes')
-const classRouter = require('./routes/classRoutes')
 const errorHandler = require('./middlewares/errorHandler')
 
 app.use(cors())
