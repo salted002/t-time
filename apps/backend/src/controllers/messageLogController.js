@@ -17,4 +17,17 @@ async function list(req, res) {
   });
 }
 
-module.exports = { list };
+async function getById(req, res) {
+  const { academyId } = req.academy;
+  const { logId } = req.params;
+
+  const messageLog = await messageLogService.getById({ academyId, logId });
+
+  return res.status(200).json({
+    success: true,
+    messageLog,
+    message: '발송 상세 조회 성공',
+  });
+}
+
+module.exports = { list, getById };
