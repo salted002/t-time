@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { AdminLayout } from '@/components/layout/AdminLayout'
 
+import LandingPage from '@/pages/landing/LandingPage';
 import SignupPage from '@/pages/auth/SignupPage';
 import LoginPage from '@/pages/auth/loginPage';
 import StudentListPage from '@/pages/students/StudentListPage';
@@ -23,6 +24,7 @@ function App() {
     <TooltipProvider>
       <ConfirmProvider>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route
