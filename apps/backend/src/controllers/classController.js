@@ -25,6 +25,19 @@ async function create(req, res) {
   });
 }
 
+async function getById(req, res) {
+  const { academyId } = req.academy;
+  const { classId } = req.params;
+
+  const classDetail = await classService.getById({ academyId, classId });
+
+  return res.status(200).json({
+    success: true,
+    class: classDetail,
+    message: '반 상세 조회 성공',
+  });
+}
+
 async function update(req, res) {
   const { academyId } = req.academy;
   const { classId } = req.params;
@@ -52,4 +65,4 @@ async function remove(req, res) {
   });
 }
 
-module.exports = { list, create, update, remove };
+module.exports = { list, create, getById, update, remove };

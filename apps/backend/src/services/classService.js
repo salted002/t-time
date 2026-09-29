@@ -98,6 +98,27 @@ async function list({ academyId }) {
   return rows.map((row) => toResponse(row, Number(row.get('studentCount'))));
 }
 
+// 반 상세 조회 (소속 학생 전체, 이름 오름차순 — 휴원·퇴원 포함)
+async function getById({ academyId, classId }) {
+  await assertAcademy(academyId);
+
+  const targetClass = await findClass(academyId, classId);
+
+  const students = await db.Student.findAll({
+    where: { classId, academyId },
+    attributes: ['id', 'name', 'status'],
+    order: [
+      ['name', 'ASC'],
+      ['id', 'ASC'],
+    ],
+  });
+
+  return {
+    ...toResponse(targetClass, students.length),
+    students: students.map((student) => ({ id: student.id, name: student.name, status: student.status })),
+  };
+}
+
 // 반 생성 + 학생 배정 (다른 반 소속 학생은 새 반으로 이동)
 async function create({ academyId, name, teacherName, studentIds }) {
   await assertAcademy(academyId);
@@ -191,4 +212,4 @@ async function remove({ academyId, classId }) {
   return deleted;
 }
 
-module.exports = { list, create, update, remove };
+module.exports = { list, create, getById, update, remove };
