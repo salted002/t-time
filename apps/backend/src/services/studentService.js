@@ -239,6 +239,7 @@ async function getExamResults({ academyId, studentId, limit, offset }) {
     ],
     limit,
     offset,
+    subQuery: false,
   })
 
   const examResults = rows.map((participant) => ({
@@ -254,6 +255,7 @@ async function getExamResults({ academyId, studentId, limit, offset }) {
   return { examResults, count }
 }
 
+// 학생 상세 성적탭 — 시험 상세 조회 : GET /students/{studentId}/exam-results/{examId}
 async function getExamResultDetail({ academyId, studentId, examId }) {
   const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
   if (!academy) {
@@ -423,6 +425,7 @@ async function getExamResultDetail({ academyId, studentId, examId }) {
       ],
       order: [[db.Exam, 'examDate', 'DESC']],
       limit: 6,
+      subQuery: false,
     })
 
     // 최신순 6개 시험을 거꾸로 정렬.
