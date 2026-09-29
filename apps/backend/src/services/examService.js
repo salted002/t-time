@@ -1,5 +1,6 @@
 const { Op } = require('sequelize')
 const db = require('../db/models')
+const examStatsService = require('./examStatsService')
 
 const VALID_EVAL_TYPES = ['score', 'score_max', 'grade']
 
@@ -183,11 +184,32 @@ async function getById({ academyId, examId }) {
     (participant) => !participant.Student || participant.Student.status === '재원',
   )
 
-  const scored = activeParticipants.map((participant) => {
-    const scoresBySubject = new Map(participant.ExamScores.map((score) => [score.subjectId, score]))
+  // participant별로 "과목id → ExamScore" 맵을 만들어둔다. (examStatsService 함수들이 이 형태를 기대함)
+  const withScoresBySubject = activeParticipants.map((participant) => ({
+    participantId: participant.id,
+    studentId: participant.studentId,
+    studentName: participant.Student ? participant.Student.name : participant.studentNameSnapshot,
+    teacherComment: participant.teacherComment,
+    scoresBySubject: new Map(participant.ExamScores.map((score) => [score.subjectId, score])),
+  }))
 
+  const { ranked, classAverageTotal } = examStatsService.computeTotals({
+    isGradeExam,
+    examSubjects: exam.ExamSubjects,
+    participants: withScoresBySubject,
+  })
+
+  const subjectStats = isGradeExam
+    ? new Map()
+    : examStatsService.computeSubjectStats({
+        examSubjects: exam.ExamSubjects,
+        participants: withScoresBySubject,
+      })
+
+  // 화면(SCR-EXAM-DETAIL)이 기대하는 형태(참가자별 scores 배열 + total + totalRank + average)로 조립
+  const scored = ranked.map((participant) => {
     const scores = exam.ExamSubjects.map((subject) => {
-      const matchedScore = scoresBySubject.get(subject.id)
+      const matchedScore = participant.scoresBySubject.get(subject.id)
       return {
         subjectId: subject.id,
         score: matchedScore ? matchedScore.score : null,
@@ -195,39 +217,20 @@ async function getById({ academyId, examId }) {
       }
     })
 
-    const total = isGradeExam
-      ? null
-      : scores.reduce((sum, s) => (s.score !== null ? sum + Number(s.score) : sum), 0)
-
     return {
-      participantId: participant.id,
+      participantId: participant.participantId,
       studentId: participant.studentId,
-      studentName: participant.Student ? participant.Student.name : participant.studentNameSnapshot,
+      studentName: participant.studentName,
       scores,
-      total,
-      average: null,
-      totalRank: null,
+      total: participant.total,
+      average:
+        !isGradeExam && exam.ExamSubjects.length
+          ? Number((participant.total / exam.ExamSubjects.length).toFixed(1))
+          : null,
+      totalRank: isGradeExam ? null : participant.rank,
       teacherComment: participant.teacherComment,
     }
   })
-
-  // 동점자일 경우 석차 처리: 공동 순위 + 다음 순위 건너뛰기
-  if (!isGradeExam) {
-    const sortedByTotal = [...scored].sort((a, b) => b.total - a.total)
-    let currentRank = 0
-    let previousTotal = null
-
-    sortedByTotal.forEach((participant, index) => {
-      if (participant.total !== previousTotal) {
-        currentRank = index + 1
-        previousTotal = participant.total
-      }
-      participant.totalRank = `${currentRank}/${sortedByTotal.length}`
-      participant.average = exam.ExamSubjects.length
-        ? Number((participant.total / exam.ExamSubjects.length).toFixed(1))
-        : null
-    })
-  }
 
   const activeStudentIds = activeParticipants.map((p) => p.studentId).filter(Boolean)
 
@@ -241,23 +244,17 @@ async function getById({ academyId, examId }) {
         },
       })
     : []
+
   const classAverage = isGradeExam
     ? null
     : {
-        bySubject: exam.ExamSubjects.map((subject) => {
-          const values = scored
-            .map((p) => p.scores.find((s) => s.subjectId === subject.id))
-            .filter((s) => s && s.score !== null)
-            .map((s) => Number(s.score))
-          const average = values.length
-            ? Number((values.reduce((sum, v) => sum + v, 0) / values.length).toFixed(1))
-            : null
-          return { subjectId: subject.id, average }
-        }),
-        total: scored.length
-          ? Number((scored.reduce((sum, p) => sum + (p.total || 0), 0) / scored.length).toFixed(1))
-          : null,
+        bySubject: exam.ExamSubjects.map((subject) => ({
+          subjectId: subject.id,
+          average: subjectStats.get(subject.id)?.average ?? null,
+        })),
+        total: classAverageTotal,
       }
+
   return {
     id: exam.id,
     examDate: exam.examDate,
