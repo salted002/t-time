@@ -4,5 +4,6 @@ const examController = require('../controllers/examController')
 const { authenticateAcademy } = require('../middlewares/authAcademy')
 
 router.get('/', authenticateAcademy, examController.list)
+router.post('/', authenticateAcademy, examController.create)
 
 module.exports = router

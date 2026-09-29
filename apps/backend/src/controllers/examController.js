@@ -2,7 +2,7 @@ const examService = require('../services/examService')
 const { parsePagination } = require('../utils/paginationUtil')
 
 async function list(req, res) {
-  const { academyId } = req.academyId
+  const { academyId } = req.academy
   const { q } = req.query
   const { page, size, limit, offset } = parsePagination(req.query)
 
@@ -18,4 +18,16 @@ async function list(req, res) {
   })
 }
 
-module.exports = { list }
+async function create(req, res) {
+  const { academyId } = req.academy
+
+  const exam = await examService.create({ ...req.body, academyId })
+
+  return res.status(201).json({
+    success: true,
+    exam,
+    message: '시험이 생성되었습니다.',
+  })
+}
+
+module.exports = { list, create }
