@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const db = require('../db/models')
-const { hashPassword, verifyPassword } = require('../utils/passwordUtil')
+const { hashPassword } = require('../utils/passwordUtil')
 const { issueAcademyToken } = require('../utils/jwtUtil')
 
 function throwError(statusCode, message) {
@@ -154,15 +154,9 @@ async function updateAcademy(academyId, updateData, file) {
   return academy
 }
 
-async function deleteAcademy(userId, academyId, password) {
-  if (!password) throwError(400, '비밀번호는 필수입니다.')
-
+async function deleteAcademy(academyId) {
   const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
   if (!academy) throwError(404, '학원을 찾을 수 없습니다.')
-
-  const user = await db.User.findOne({ where: { id: userId } })
-  const isPasswordValid = await verifyPassword(password, user.passwordHash)
-  if (!isPasswordValid) throwError(401, '비밀번호가 일치하지 않습니다.')
 
   await academy.update({ deletedAt: new Date() })
 }
