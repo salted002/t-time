@@ -1,12 +1,12 @@
-const { Op } = require('sequelize');
-const db = require('../db/models');
+const { Op } = require('sequelize')
+const db = require('../db/models')
 
-const VALID_STATUSES = ['재원', '휴원', '퇴원'];
+const VALID_STATUSES = ['재원', '휴원', '퇴원']
 
 function throwError(statusCode, message) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  throw error;
+  const error = new Error(message)
+  error.statusCode = statusCode
+  throw error
 }
 
 function toDetailResponse(student) {
@@ -20,28 +20,28 @@ function toDetailResponse(student) {
     status: student.status,
     parentPhone: student.parentPhone,
     enrolledAt: student.enrolledAt,
-  };
+  }
 }
 
 async function list({ academyId, classId, status, q, limit, offset }) {
-  const where = { academyId };
+  const where = { academyId }
 
   if (classId) {
-    where.classId = classId;
+    where.classId = classId
   }
 
   if (status) {
     const statuses = status
       .split(',')
       .map((value) => value.trim())
-      .filter((value) => VALID_STATUSES.includes(value));
+      .filter((value) => VALID_STATUSES.includes(value))
     if (statuses.length > 0) {
-      where.status = { [Op.in]: statuses };
+      where.status = { [Op.in]: statuses }
     }
   }
 
   if (q) {
-    where.name = { [Op.iLike]: `%${q}%` };
+    where.name = { [Op.iLike]: `%${q}%` }
   }
 
   const { rows, count } = await db.Student.findAndCountAll({
@@ -53,7 +53,7 @@ async function list({ academyId, classId, status, q, limit, offset }) {
     ],
     limit,
     offset,
-  });
+  })
 
   const students = rows.map((student) => ({
     id: student.id,
@@ -65,32 +65,41 @@ async function list({ academyId, classId, status, q, limit, offset }) {
     grade: student.grade,
     parentPhone: student.parentPhone,
     enrolledAt: student.enrolledAt,
-  }));
+  }))
 
-  return { students, count };
+  return { students, count }
 }
 
-async function create({ academyId, name, classId, status, school, grade, parentPhone, enrolledAt }) {
-  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } });
+async function create({
+  academyId,
+  name,
+  classId,
+  status,
+  school,
+  grade,
+  parentPhone,
+  enrolledAt,
+}) {
+  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
   if (!academy) {
-    throwError(400, '유효하지 않은 토큰입니다.');
+    throwError(400, '유효하지 않은 토큰입니다.')
   }
 
-  const resolvedStatus = status || '재원';
+  const resolvedStatus = status || '재원'
   if (!VALID_STATUSES.includes(resolvedStatus)) {
-    throwError(400, 'status 값이 올바르지 않습니다.');
+    throwError(400, 'status 값이 올바르지 않습니다.')
   }
 
-  const requiredFields = { name, school, grade, parentPhone };
-  const missingField = Object.entries(requiredFields).find(([, value]) => !value);
+  const requiredFields = { name, school, grade, parentPhone }
+  const missingField = Object.entries(requiredFields).find(([, value]) => !value)
   if (missingField) {
-    throwError(400, `${missingField[0]}은(는) 필수입니다.`);
+    throwError(400, `${missingField[0]}은(는) 필수입니다.`)
   }
 
   if (classId) {
-    const studentClass = await db.Class.findOne({ where: { id: classId, academyId } });
+    const studentClass = await db.Class.findOne({ where: { id: classId, academyId } })
     if (!studentClass) {
-      throwError(400, '유효하지 않은 반입니다.');
+      throwError(400, '유효하지 않은 반입니다.')
     }
   }
 
@@ -103,55 +112,65 @@ async function create({ academyId, name, classId, status, school, grade, parentP
     grade,
     parentPhone,
     enrolledAt: enrolledAt || null,
-  });
+  })
 
-  return student;
+  return student
 }
 
 async function getById({ academyId, studentId }) {
-  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } });
+  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
   if (!academy) {
-    throwError(401, '유효하지 않은 토큰입니다.');
+    throwError(401, '유효하지 않은 토큰입니다.')
   }
 
   const student = await db.Student.findOne({
     where: { id: studentId, academyId },
     include: [{ model: db.Class, attributes: ['id', 'name'], required: false }],
-  });
+  })
 
   if (!student) {
-    throwError(404, '학생을 찾을 수 없습니다.');
+    throwError(404, '학생을 찾을 수 없습니다.')
   }
 
-  return toDetailResponse(student);
+  return toDetailResponse(student)
 }
 
-async function update({ academyId, studentId, name, classId, status, school, grade, parentPhone, enrolledAt }) {
-  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } });
+async function update({
+  academyId,
+  studentId,
+  name,
+  classId,
+  status,
+  school,
+  grade,
+  parentPhone,
+  enrolledAt,
+}) {
+  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
   if (!academy) {
-    throwError(401, '유효하지 않은 토큰입니다.');
+    throwError(401, '유효하지 않은 토큰입니다.')
   }
 
-  const resolvedStatus = status || '재원';
+  const resolvedStatus = status || '재원'
   if (!VALID_STATUSES.includes(resolvedStatus)) {
-    throwError(400, 'status 값이 올바르지 않습니다.');
+    throwError(400, 'status 값이 올바르지 않습니다.')
   }
 
-  const requiredFields = { name, school, grade, parentPhone };
-  const missingField = Object.entries(requiredFields).find(([, value]) => !value);
+  const requiredFields = { name, school, grade, parentPhone }
+  const missingField = Object.entries(requiredFields).find(([, value]) => !value)
   if (missingField) {
-    throwError(400, `${missingField[0]}은(는) 필수입니다.`);
+    throwError(400, `${missingField[0]}은(는) 필수입니다.`)
   }
 
-  const student = await db.Student.findOne({ where: { id: studentId, academyId } });
+  const student = await db.Student.findOne({ where: { id: studentId, academyId } })
   if (!student) {
-    throwError(404, '학생을 찾을 수 없습니다.');
+    throwError(404, '학생을 찾을 수 없습니다.')
   }
 
   if (classId) {
-    const studentClass = await db.Class.findOne({ where: { id: classId, academyId } });
+    const studentClass = await db.Class.findOne({ where: { id: classId, academyId } })
     if (!studentClass) {
-      throwError(400, '유효하지 않은 반입니다.');
+      throwError(400, '유효하지 않은 반입니다.')
     }
   }
 
@@ -163,31 +182,31 @@ async function update({ academyId, studentId, name, classId, status, school, gra
     grade,
     parentPhone,
     enrolledAt: enrolledAt || null,
-  });
+  })
 
   const updatedStudent = await db.Student.findOne({
     where: { id: studentId, academyId },
     include: [{ model: db.Class, attributes: ['id', 'name'], required: false }],
-  });
+  })
 
-  return toDetailResponse(updatedStudent);
+  return toDetailResponse(updatedStudent)
 }
 
 async function remove({ academyId, studentId }) {
-  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } });
+  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
   if (!academy) {
-    throwError(401, '유효하지 않은 토큰입니다.');
+    throwError(401, '유효하지 않은 토큰입니다.')
   }
 
-  const student = await db.Student.findOne({ where: { id: studentId, academyId } });
+  const student = await db.Student.findOne({ where: { id: studentId, academyId } })
   if (!student) {
-    throwError(404, '학생을 찾을 수 없습니다.');
+    throwError(404, '학생을 찾을 수 없습니다.')
   }
 
-  const deleted = { id: student.id, name: student.name };
-  await student.destroy();
+  const deleted = { id: student.id, name: student.name }
+  await student.destroy()
 
-  return deleted;
+  return deleted
 }
 
-module.exports = { list, create, getById, update, remove };
+module.exports = { list, create, getById, update, remove }
