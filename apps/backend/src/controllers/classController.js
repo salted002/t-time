@@ -39,4 +39,17 @@ async function update(req, res) {
   });
 }
 
-module.exports = { list, create, update };
+async function remove(req, res) {
+  const { academyId } = req.academy;
+  const { classId } = req.params;
+
+  const deletedClass = await classService.remove({ academyId, classId });
+
+  return res.status(200).json({
+    success: true,
+    class: deletedClass,
+    message: '반이 삭제되었습니다.',
+  });
+}
+
+module.exports = { list, create, update, remove };

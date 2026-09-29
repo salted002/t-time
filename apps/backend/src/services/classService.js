@@ -63,6 +63,17 @@ async function assertStudentsInAcademy(academyId, studentIds) {
   }
 }
 
+async function findClass(academyId, classId) {
+  if (!UUID_PATTERN.test(classId)) {
+    throwError(404, '반을 찾을 수 없습니다.');
+  }
+  const targetClass = await db.Class.findOne({ where: { id: classId, academyId } });
+  if (!targetClass) {
+    throwError(404, '반을 찾을 수 없습니다.');
+  }
+  return targetClass;
+}
+
 function toResponse(classRow, studentCount) {
   return {
     id: classRow.id,
@@ -125,14 +136,7 @@ async function update({ academyId, classId, name, teacherName, studentIds }) {
     throwError(400, '수정할 값이 없습니다.');
   }
 
-  if (!UUID_PATTERN.test(classId)) {
-    throwError(404, '반을 찾을 수 없습니다.');
-  }
-
-  const targetClass = await db.Class.findOne({ where: { id: classId, academyId } });
-  if (!targetClass) {
-    throwError(404, '반을 찾을 수 없습니다.');
-  }
+  const targetClass = await findClass(academyId, classId);
 
   const changes = {};
   if (name !== undefined) {
@@ -175,4 +179,16 @@ async function update({ academyId, classId, name, teacherName, studentIds }) {
   return toResponse(targetClass, studentCount);
 }
 
-module.exports = { list, create, update };
+// 반 삭제 (DB 외래키 ON DELETE SET NULL로 students/exams.class_id만 NULL, 기록은 유지)
+async function remove({ academyId, classId }) {
+  await assertAcademy(academyId);
+
+  const targetClass = await findClass(academyId, classId);
+
+  const deleted = { id: targetClass.id, name: targetClass.name };
+  await targetClass.destroy();
+
+  return deleted;
+}
+
+module.exports = { list, create, update, remove };
