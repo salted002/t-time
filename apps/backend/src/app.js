@@ -19,6 +19,8 @@ app.use('/auth', authRouter)
 app.use('/files', fileRouter)
 app.use('/students', studentRouter)
 app.use('/message-logs', messageLogRouter)
+app.use('/classes', classRouter)
+
 // 에러 처리 미들웨어를 마지막에 등록해야 함
 app.use(errorHandler)
 
