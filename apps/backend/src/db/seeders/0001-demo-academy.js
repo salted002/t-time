@@ -32,19 +32,19 @@
  *   학원 관리자: admin@hanbit.kr / Ttime1234!
  */
 
-'use strict';
+'use strict'
 
-const bcrypt = require('bcrypt');
-const { randomUUID, randomBytes } = require('crypto');
+const bcrypt = require('bcrypt')
+const { randomUUID, randomBytes } = require('crypto')
 
 async function up(queryInterface) {
-  const now = new Date();
-  const passwordHash = bcrypt.hashSync('Ttime1234!', 10);
+  const now = new Date()
+  const passwordHash = bcrypt.hashSync('Ttime1234!', 10)
 
   // ---------------------------------------------------------------
   // 1. academies (1개)
   // ---------------------------------------------------------------
-  const academyId = randomUUID();
+  const academyId = randomUUID()
   await queryInterface.bulkInsert('academies', [
     {
       id: academyId,
@@ -58,11 +58,12 @@ async function up(queryInterface) {
       sms_sender_number: '01012345678',
       subscription_status: 'FREE',
       subscribed_at: null,
+      is_demo: true,
       deleted_at: null,
       created_at: now,
       updated_at: now,
     },
-  ]);
+  ])
 
   // ---------------------------------------------------------------
   // 2. users (학원 관리자 계정 1개)
@@ -77,7 +78,7 @@ async function up(queryInterface) {
       created_at: now,
       updated_at: now,
     },
-  ]);
+  ])
 
   // ---------------------------------------------------------------
   // 3. classes (5개)
@@ -88,8 +89,8 @@ async function up(queryInterface) {
     { name: '중급반 A', teacher: '최수진' },
     { name: '중급반 B', teacher: '정다은' },
     { name: '고급반', teacher: '한지훈' },
-  ];
-  const classIds = classDefs.map(() => randomUUID());
+  ]
+  const classIds = classDefs.map(() => randomUUID())
   await queryInterface.bulkInsert(
     'classes',
     classDefs.map((c, i) => ({
@@ -100,34 +101,52 @@ async function up(queryInterface) {
       created_at: now,
       updated_at: now,
     })),
-  );
+  )
 
   // ---------------------------------------------------------------
   // 4. students (80명: 재원 65 / 휴원 10 / 퇴원 5)
   // ---------------------------------------------------------------
-  const lastNames = ['김', '이', '박', '최', '정', '강', '조', '윤', '장', '임'];
+  const lastNames = ['김', '이', '박', '최', '정', '강', '조', '윤', '장', '임']
   const firstNames = [
-    '서연', '도윤', '하은', '시우', '지우', '민준', '수아', '예준', '채원', '이준',
-    '다은', '지호', '유나', '현우', '소율', '건우', '서윤', '민재', '아린', '준서',
-  ];
-  const schools = ['한빛초등학교', '서울초등학교', '강남초등학교', '대치초등학교', '도곡초등학교'];
-  const gradeLabelsForStudents = ['1학년', '2학년', '3학년', '4학년', '5학년', '6학년'];
+    '서연',
+    '도윤',
+    '하은',
+    '시우',
+    '지우',
+    '민준',
+    '수아',
+    '예준',
+    '채원',
+    '이준',
+    '다은',
+    '지호',
+    '유나',
+    '현우',
+    '소율',
+    '건우',
+    '서윤',
+    '민재',
+    '아린',
+    '준서',
+  ]
+  const schools = ['한빛초등학교', '서울초등학교', '강남초등학교', '대치초등학교', '도곡초등학교']
+  const gradeLabelsForStudents = ['1학년', '2학년', '3학년', '4학년', '5학년', '6학년']
 
-  const students = [];
+  const students = []
   for (let i = 0; i < 80; i++) {
-    let status = '재원';
-    if (i >= 65 && i < 75) status = '휴원';
-    if (i >= 75) status = '퇴원';
+    let status = '재원'
+    if (i >= 65 && i < 75) status = '휴원'
+    if (i >= 75) status = '퇴원'
 
     // 10명은 반 미배정(class_id = null) 상태로 남겨서 화면에서 테스트 가능하게 함
-    const classId = i % 8 === 7 ? null : classIds[i % classIds.length];
+    const classId = i % 8 === 7 ? null : classIds[i % classIds.length]
 
     students.push({
       id: randomUUID(),
       name: lastNames[i % lastNames.length] + firstNames[(i * 3 + 1) % firstNames.length],
       status,
       classId,
-    });
+    })
   }
 
   await queryInterface.bulkInsert(
@@ -145,13 +164,13 @@ async function up(queryInterface) {
       created_at: now,
       updated_at: now,
     })),
-  );
+  )
 
   // ---------------------------------------------------------------
   // 5. student_counselings (재원 학생 25명에게 1건씩)
   //    ⚠ target ENUM은 '학생' / '학부모'만 허용 (구 값 '보호자' 사용 금지)
   // ---------------------------------------------------------------
-  const counselingTargets = students.filter((s) => s.status === '재원').slice(0, 25);
+  const counselingTargets = students.filter((s) => s.status === '재원').slice(0, 25)
   await queryInterface.bulkInsert(
     'student_counselings',
     counselingTargets.map((s, i) => ({
@@ -165,7 +184,7 @@ async function up(queryInterface) {
       created_at: now,
       updated_at: now,
     })),
-  );
+  )
 
   // ---------------------------------------------------------------
   // 6. exams (6개: score 2 / score_max 2 / grade 2)
@@ -177,9 +196,9 @@ async function up(queryInterface) {
     { name: 'SR 모의고사 2회', evalType: 'score_max', date: '2026-09-20' },
     { name: '단어시험 등급평가 1회', evalType: 'grade', date: '2026-08-15' },
     { name: '단어시험 등급평가 2회', evalType: 'grade', date: '2026-09-15' },
-  ];
+  ]
 
-  const examIds = examDefs.map(() => randomUUID());
+  const examIds = examDefs.map(() => randomUUID())
   await queryInterface.bulkInsert(
     'exams',
     examDefs.map((e, i) => ({
@@ -193,24 +212,24 @@ async function up(queryInterface) {
       created_at: now,
       updated_at: now,
     })),
-  );
+  )
 
   // ---------------------------------------------------------------
   // 7. exam_subjects (시험당 2~3과목)
   // ---------------------------------------------------------------
-  const subjectPool = ['리딩', '문법', '어휘', '듣기', '말하기'];
-  const examSubjects = [];
+  const subjectPool = ['리딩', '문법', '어휘', '듣기', '말하기']
+  const examSubjects = []
   examDefs.forEach((e, i) => {
-    const subjectCount = i % 2 === 0 ? 2 : 3;
+    const subjectCount = i % 2 === 0 ? 2 : 3
     for (let j = 0; j < subjectCount; j++) {
       examSubjects.push({
         id: randomUUID(),
         examId: examIds[i],
         name: subjectPool[j % subjectPool.length],
         maxScore: e.evalType === 'score_max' ? 50 : null,
-      });
+      })
     }
-  });
+  })
   await queryInterface.bulkInsert(
     'exam_subjects',
     examSubjects.map((s) => ({
@@ -221,22 +240,22 @@ async function up(queryInterface) {
       created_at: now,
       updated_at: now,
     })),
-  );
+  )
 
   // ---------------------------------------------------------------
   // 8. exam_grades (grade 타입 시험 2개 × 5등급)
   // ---------------------------------------------------------------
-  const gradeLabelsList = ['A', 'B', 'C', 'D', 'F'];
+  const gradeLabelsList = ['A', 'B', 'C', 'D', 'F']
   const gradeExamIds = examDefs
     .map((e, i) => (e.evalType === 'grade' ? examIds[i] : null))
-    .filter((v) => v !== null);
+    .filter((v) => v !== null)
 
-  const examGrades = [];
+  const examGrades = []
   gradeExamIds.forEach((examId) => {
     gradeLabelsList.forEach((label, order) => {
-      examGrades.push({ id: randomUUID(), examId, label, order: order + 1 });
-    });
-  });
+      examGrades.push({ id: randomUUID(), examId, label, order: order + 1 })
+    })
+  })
   await queryInterface.bulkInsert(
     'exam_grades',
     examGrades.map((g) => ({
@@ -247,26 +266,26 @@ async function up(queryInterface) {
       created_at: now,
       updated_at: now,
     })),
-  );
+  )
 
   // ---------------------------------------------------------------
   // 9. exam_participants (시험당 재원 학생 30~40명 응시)
   // ---------------------------------------------------------------
-  const activeStudents = students.filter((s) => s.status === '재원');
-  const participants = [];
+  const activeStudents = students.filter((s) => s.status === '재원')
+  const participants = []
 
   examDefs.forEach((e, i) => {
-    const count = 30 + (i % 3) * 5; // 30, 35, 40 반복
+    const count = 30 + (i % 3) * 5 // 30, 35, 40 반복
     for (let k = 0; k < count && k < activeStudents.length; k++) {
-      const student = activeStudents[(k + i * 7) % activeStudents.length];
+      const student = activeStudents[(k + i * 7) % activeStudents.length]
       participants.push({
         id: randomUUID(),
         examId: examIds[i],
         studentId: student.id,
         name: student.name,
-      });
+      })
     }
-  });
+  })
 
   await queryInterface.bulkInsert(
     'exam_participants',
@@ -279,29 +298,29 @@ async function up(queryInterface) {
       created_at: now,
       updated_at: now,
     })),
-  );
+  )
 
   // ---------------------------------------------------------------
   // 10. exam_scores (응시자 × 해당 시험 과목 수)
   // ---------------------------------------------------------------
-  const examScores = [];
+  const examScores = []
   participants.forEach((p, i) => {
-    const examIndex = examIds.indexOf(p.examId);
-    const evalType = examDefs[examIndex].evalType;
-    const subjectsForExam = examSubjects.filter((s) => s.examId === p.examId);
-    const gradesForExam = examGrades.filter((g) => g.examId === p.examId);
+    const examIndex = examIds.indexOf(p.examId)
+    const evalType = examDefs[examIndex].evalType
+    const subjectsForExam = examSubjects.filter((s) => s.examId === p.examId)
+    const gradesForExam = examGrades.filter((g) => g.examId === p.examId)
 
     subjectsForExam.forEach((subject, j) => {
-      let score = null;
-      let gradeId = null;
+      let score = null
+      let gradeId = null
 
       if (evalType === 'score') {
-        score = Math.round((40 + ((i * 7 + j * 13) % 60)) * 10) / 10; // 40.0~99.9
+        score = Math.round((40 + ((i * 7 + j * 13) % 60)) * 10) / 10 // 40.0~99.9
       } else if (evalType === 'score_max') {
-        const max = subject.maxScore || 50;
-        score = Math.round((((i * 5 + j * 11) % (max * 10 + 1)) / 10) * 10) / 10; // 0~max
+        const max = subject.maxScore || 50
+        score = Math.round((((i * 5 + j * 11) % (max * 10 + 1)) / 10) * 10) / 10 // 0~max
       } else if (evalType === 'grade' && gradesForExam.length > 0) {
-        gradeId = gradesForExam[(i + j) % gradesForExam.length].id;
+        gradeId = gradesForExam[(i + j) % gradesForExam.length].id
       }
 
       examScores.push({
@@ -312,10 +331,10 @@ async function up(queryInterface) {
         grade_id: gradeId,
         created_at: now,
         updated_at: now,
-      });
-    });
-  });
-  await queryInterface.bulkInsert('exam_scores', examScores);
+      })
+    })
+  })
+  await queryInterface.bulkInsert('exam_scores', examScores)
 
   // ---------------------------------------------------------------
   // 11. sms_templates (2개, 1개는 기본값)
@@ -335,35 +354,37 @@ async function up(queryInterface) {
       id: randomUUID(),
       academy_id: academyId,
       name: '상담 예약 안내',
-      content: '안녕하세요, {학생명} 학생 상담 일정 관련하여 안내드립니다. 담당 선생님께 문의 부탁드립니다.',
+      content:
+        '안녕하세요, {학생명} 학생 상담 일정 관련하여 안내드립니다. 담당 선생님께 문의 부탁드립니다.',
       is_default: false,
       created_at: now,
       updated_at: now,
     },
-  ]);
+  ])
 
   // ---------------------------------------------------------------
   // 12. reports (6개)
   //     ⚠ ai_feedback / teacher_feedback은 0016에서 JSON 컬럼으로 변경됨
   //        → {과목명: 피드백} 형태의 JSON 객체로 저장 (순수 텍스트 금지)
   // ---------------------------------------------------------------
-  const reportTargets = activeStudents.slice(0, 6);
-  const reportIds = reportTargets.map(() => randomUUID());
+  const reportTargets = activeStudents.slice(0, 6)
+  const reportIds = reportTargets.map(() => randomUUID())
   await queryInterface.bulkInsert(
     'reports',
     reportTargets.map((s, i) => {
-      const relatedExamIds = examIds.slice(0, 2 + (i % 2));
-      const relatedSubjectNames = subjectPool.slice(0, 2 + (i % 2));
+      const relatedExamIds = examIds.slice(0, 2 + (i % 2))
+      const relatedSubjectNames = subjectPool.slice(0, 2 + (i % 2))
 
       const aiFeedback =
         i % 2 === 0
           ? JSON.stringify(
               relatedSubjectNames.reduce((acc, subjectName) => {
-                acc[subjectName] = `${s.name} 학생은 ${subjectName} 영역에서 최근 꾸준한 향상을 보이고 있습니다.`;
-                return acc;
+                acc[subjectName] =
+                  `${s.name} 학생은 ${subjectName} 영역에서 최근 꾸준한 향상을 보이고 있습니다.`
+                return acc
               }, {}),
             )
-          : null;
+          : null
 
       return {
         id: reportIds[i],
@@ -375,17 +396,17 @@ async function up(queryInterface) {
         teacher_feedback: null,
         created_at: now,
         updated_at: now,
-      };
+      }
     }),
-  );
+  )
 
   // ---------------------------------------------------------------
   // 13. report_share_links (reports 중 3개)
   //     ⚠ 유효기간 14일(2주) — 테이블정의서 v1.2 / policy.js 기준
   // ---------------------------------------------------------------
-  const shareLinkTargets = reportIds.slice(0, 3);
-  const shareLinkIds = shareLinkTargets.map(() => randomUUID());
-  const expiresAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const shareLinkTargets = reportIds.slice(0, 3)
+  const shareLinkIds = shareLinkTargets.map(() => randomUUID())
+  const expiresAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
   await queryInterface.bulkInsert(
     'report_share_links',
     shareLinkTargets.map((reportId, i) => ({
@@ -396,12 +417,12 @@ async function up(queryInterface) {
       created_at: now,
       updated_at: now,
     })),
-  );
+  )
 
   // ---------------------------------------------------------------
   // 14. sms_send_logs (18건, 일부는 공유링크 연결)
   // ---------------------------------------------------------------
-  const smsTargets = activeStudents.slice(0, 18);
+  const smsTargets = activeStudents.slice(0, 18)
   await queryInterface.bulkInsert(
     'sms_send_logs',
     smsTargets.map((s, i) => ({
@@ -417,7 +438,7 @@ async function up(queryInterface) {
       created_at: now,
       updated_at: now,
     })),
-  );
+  )
 }
 
 async function down(queryInterface) {
@@ -426,7 +447,7 @@ async function down(queryInterface) {
   // exam_participants / exam_scores / reports / report_share_links /
   // sms_send_logs / sms_templates 가 전부 함께 삭제됩니다.
   // platform_admins는 0002-platform-admin.js가 별도로 관리하므로 여기서 건드리지 않습니다.
-  await queryInterface.bulkDelete('academies', { slug: 'hanbit' });
+  await queryInterface.bulkDelete('academies', { slug: 'hanbit' })
 }
 
-module.exports = { up, down };
+module.exports = { up, down }

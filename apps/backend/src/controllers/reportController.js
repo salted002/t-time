@@ -15,11 +15,12 @@ async function preview(req, res) {
 
 async function create(req, res) {
   const { academyId } = req.academy
-  const { studentId, examIds, subjectNames, teacherFeedback, aiFeedback } = req.body
+  const { studentId, examId, examIds, subjectNames, teacherFeedback, aiFeedback } = req.body
 
   const report = await reportService.create({
     academyId,
     studentId,
+    examId,
     examIds,
     subjectNames,
     teacherFeedback,
@@ -99,4 +100,72 @@ async function update(req, res) {
   })
 }
 
-module.exports = { preview, create, createShareLink, list, getById, update }
+async function send(req, res) {
+  const { academyId } = req.academy
+  const { items } = req.body
+
+  const { results, message } = await reportService.send({ academyId, items })
+
+  return res.status(200).json({
+    success: true,
+    results,
+    message,
+  })
+}
+
+async function getSubjectOptions(req, res) {
+  const { academyId } = req.academy
+  const { studentIds } = req.body
+
+  const subjectNames = await reportService.getSubjectOptions({ academyId, studentIds })
+
+  return res.status(200).json({
+    success: true,
+    subjectNames,
+    message: '과목 목록 조회 성공',
+  })
+}
+
+async function batchPreview(req, res) {
+  const { academyId } = req.academy
+  const { studentIds, subjectNames } = req.body
+
+  const { candidates, generatableCount } = await reportService.batchPreview({
+    academyId,
+    studentIds,
+    subjectNames,
+  })
+
+  return res.status(200).json({
+    success: true,
+    candidates,
+    generatableCount,
+    message: `생성 가능한 리포트 ${generatableCount}건`,
+  })
+}
+
+async function createBulk(req, res) {
+  const { academyId } = req.academy
+  const { reports } = req.body
+
+  const created = await reportService.createBulk({ academyId, reports })
+
+  return res.status(201).json({
+    success: true,
+    reports: created,
+    message: `${created.length}건의 리포트가 저장되었습니다.`,
+  })
+}
+
+module.exports = {
+  preview,
+  create,
+  createShareLink,
+  list,
+  getById,
+  update,
+  send,
+  getSubjectOptions,
+  batchPreview,
+  createBulk,
+}

@@ -23,6 +23,7 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: 'FREE',
       },
       subscribedAt: { type: DataTypes.DATE, allowNull: true },
+      isDemo: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
       deletedAt: { type: DataTypes.DATE, allowNull: true },
     },
     {
