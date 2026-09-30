@@ -3,10 +3,13 @@ const db = require('../db/models')
 const crypto = require('crypto')
 const examStatsService = require('./examStatsService')
 const aiFeedbackService = require('./aiFeedbackService')
+const smsService = require('./smsService')
 
 const RECENT_TREND_LIMIT = 10 // 리포트는 학생 성적탭(6회)과 다르게 "최근 10회" 기준
 const SHARE_LINK_TTL_MS = 14 * 24 * 60 * 60 * 1000 // 2주
 const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL
+
+const PHONE_PATTERN = /^01[016789]-?\d{3,4}-?\d{4}$/
 
 function throwError(statusCode, message) {
   const error = new Error(message)
@@ -426,6 +429,40 @@ async function create({
   }
 }
 
+// 리포트 일괄 생성 흐름 2단계(과목선택)용 과목 목록 API
+// 여러 학생이 각자 최근 10회 응시한 시험의 과목명을 중복 없이 합쳐서 반환 (일괄 생성 ② 과목 선택 단계용)
+async function getSubjectOptions({ academyId, studentIds }) {
+  if (!Array.isArray(studentIds) || studentIds.length === 0) {
+    throwError(400, 'studentIds는 비어있지 않은 배열이어야 합니다.')
+  }
+
+  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
+  if (!academy) {
+    throwError(401, '유효하지 않은 토큰입니다.')
+  }
+
+  // studentIds가 전부 이 학원 소속인지 검증
+  const validStudentCount = await db.Student.count({ where: { id: studentIds, academyId } })
+  if (validStudentCount !== studentIds.length) {
+    throwError(400, '유효하지 않은 studentId가 포함되어 있습니다.')
+  }
+
+  const subjectNameSets = await Promise.all(
+    studentIds.map((studentId) =>
+      examStatsService.getRecentExamSubjectNames({
+        academyId,
+        studentId,
+        limit: RECENT_TREND_LIMIT,
+      }),
+    ),
+  )
+
+  const merged = new Set()
+  subjectNameSets.forEach((set) => set.forEach((name) => merged.add(name)))
+
+  return [...merged].sort((a, b) => a.localeCompare(b, 'ko'))
+}
+
 // 리포트 목록 조회
 async function list({ academyId, page, size, q }) {
   const pageNum = Number(page) > 0 ? Number(page) : 1
@@ -609,4 +646,94 @@ async function update({ academyId, reportId, teacherFeedback }) {
   }
 }
 
-module.exports = { preview, create, list, getById, createShareLink, update }
+// 리포트 SMS 발송 (단일/다중 공용) — items 길이가 1이면 단일 발송
+async function send({ academyId, items }) {
+  if (!Array.isArray(items) || items.length === 0) {
+    throwError(400, 'items는 비어있지 않은 배열이어야 합니다.')
+  }
+
+  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
+  if (!academy) {
+    throwError(401, '유효하지 않은 토큰입니다.')
+  }
+
+  if (!academy.smsSenderNumber) {
+    throwError(400, '학원 발신번호가 등록되지 않았습니다.')
+  }
+
+  const results = []
+
+  for (const item of items) {
+    const { reportId, recipientPhone, message } = item
+
+    try {
+      if (!PHONE_PATTERN.test(recipientPhone)) {
+        throwError(400, '수신번호 형식 오류')
+      }
+
+      const report = await db.Report.findOne({
+        where: { id: reportId, academyId },
+        include: [{ model: db.Student, attributes: ['id', 'name'] }],
+      })
+      if (!report) {
+        throwError(404, '리포트를 찾을 수 없습니다.')
+      }
+
+      // 유효한 공유 링크가 없으면(만료 포함) createShareLink가 알아서 새로 만들어줌
+      const { shareLink } = await createShareLink({ academyId, reportId })
+      const fullMessage = `${message}\n${shareLink.url}`
+
+      let status = '성공'
+      let failReason = null
+
+      // if 블록은 데모 계정일 경우 건너뛰고 '성공'으로 로그만 남긴다.
+      if (!academy.isDemo) {
+        try {
+          await smsService.sendOne({
+            to: recipientPhone,
+            from: academy.smsSenderNumber,
+            text: fullMessage,
+          })
+        } catch (smsError) {
+          status = '실패'
+          failReason = smsError.message
+        }
+      }
+
+      const log = await db.SmsSendLog.create({
+        academyId,
+        studentId: report.studentId,
+        studentNameSnapshot: report.Student.name,
+        recipientPhone,
+        message: fullMessage,
+        reportShareLinkId: shareLink.id,
+        sentAt: new Date(),
+        status,
+      })
+
+      results.push({
+        reportId,
+        status,
+        messageLogId: log.id,
+        ...(failReason ? { reason: failReason } : {}),
+      })
+    } catch (err) {
+      // 수신번호 형식 오류, 리포트 없음 등 — 로그를 만들 만한 정보(studentId 등)가 부족해 로그 없이 실패만 기록
+      results.push({ reportId, status: '실패', reason: err.message })
+    }
+  }
+
+  const successCount = results.filter((r) => r.status === '성공').length
+  return { results, message: `${items.length}건 중 ${successCount}건 발송 완료` }
+}
+
+module.exports = {
+  preview,
+  create,
+  list,
+  getById,
+  createShareLink,
+  update,
+  send,
+  getSubjectOptions,
+}

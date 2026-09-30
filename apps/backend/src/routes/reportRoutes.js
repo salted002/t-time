@@ -9,5 +9,7 @@ router.post('/:reportId/share-link', authenticateAcademy, reportController.creat
 router.get('/', authenticateAcademy, reportController.list)
 router.get('/:reportId', authenticateAcademy, reportController.getById)
 router.patch('/:reportId', authenticateAcademy, reportController.update)
+router.post('/send', authenticateAcademy, reportController.send)
+router.post('/subject-options', authenticateAcademy, reportController.getSubjectOptions)
 
 module.exports = router

@@ -99,4 +99,39 @@ async function update(req, res) {
   })
 }
 
-module.exports = { preview, create, createShareLink, list, getById, update }
+async function send(req, res) {
+  const { academyId } = req.academy
+  const { items } = req.body
+
+  const { results, message } = await reportService.send({ academyId, items })
+
+  return res.status(200).json({
+    success: true,
+    results,
+    message,
+  })
+}
+
+async function getSubjectOptions(req, res) {
+  const { academyId } = req.academy
+  const { studentIds } = req.body
+
+  const subjectNames = await reportService.getSubjectOptions({ academyId, studentIds })
+
+  return res.status(200).json({
+    success: true,
+    subjectNames,
+    message: '과목 목록 조회 성공',
+  })
+}
+
+module.exports = {
+  preview,
+  create,
+  createShareLink,
+  list,
+  getById,
+  update,
+  send,
+  getSubjectOptions,
+}

@@ -1,13 +1,13 @@
-const authService = require('../services/authService');
+const authService = require('../services/authService')
 
 function buildLogoUrl(req, filename) {
-  return filename ? `${req.protocol}://${req.get('host')}/files/${filename}` : null;
+  return filename ? `${req.protocol}://${req.get('host')}/files/${filename}` : null
 }
 
 async function login(req, res) {
-  const { email, password } = req.body;
+  const { email, password } = req.body
 
-  const { user, token, academy } = await authService.login(email, password);
+  const { user, token, academy } = await authService.login(email, password)
 
   return res.status(200).json({
     success: true,
@@ -22,15 +22,15 @@ async function login(req, res) {
       slug: academy.slug,
       name: academy.name,
     },
-    isDemo: false,
+    isDemo: academy.isDemo,
     message: '로그인에 성공했습니다.',
-  });
+  })
 }
 
 async function getMe(req, res) {
-  const { userId, academyId } = req.academy;
+  const { userId, academyId } = req.academy
 
-  const { user, academy } = await authService.getMe(userId, academyId);
+  const { user, academy } = await authService.getMe(userId, academyId)
 
   return res.status(200).json({
     success: true,
@@ -46,21 +46,27 @@ async function getMe(req, res) {
       logoUrl: buildLogoUrl(req, academy.logoUrl),
       subscriptionStatus: academy.subscriptionStatus,
     },
-    isDemo: false,
-    message: '내 정보 조회를 성공했습니다.',
-  });
+    isDemo: academy.isDemo,
+    message: '내 정보 조회에 성공했습니다.',
+  })
 }
 
 async function changePassword(req, res) {
-  const { userId, academyId } = req.academy;
-  const { currentPassword, newPassword, newPasswordConfirm } = req.body;
+  const { userId, academyId } = req.academy
+  const { currentPassword, newPassword, newPasswordConfirm } = req.body
 
-  await authService.changePassword(userId, academyId, currentPassword, newPassword, newPasswordConfirm);
+  await authService.changePassword(
+    userId,
+    academyId,
+    currentPassword,
+    newPassword,
+    newPasswordConfirm,
+  )
 
   return res.status(200).json({
     success: true,
     message: '관리자 비밀번호를 변경하였습니다.',
-  });
+  })
 }
 
-module.exports = { login, changePassword, getMe };
+module.exports = { login, changePassword, getMe }
