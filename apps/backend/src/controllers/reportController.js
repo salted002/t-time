@@ -46,4 +46,57 @@ async function createShareLink(req, res) {
   })
 }
 
-module.exports = { preview, create, createShareLink }
+async function list(req, res) {
+  const { academyId } = req.academy
+  const { page, size, q } = req.query
+
+  const {
+    reports,
+    count,
+    page: currentPage,
+    size: pageSize,
+  } = await reportService.list({
+    academyId,
+    page,
+    size,
+    q,
+  })
+
+  return res.status(200).json({
+    success: true,
+    reports,
+    count,
+    page: currentPage,
+    size: pageSize,
+    message: '리포트 목록 조회 성공',
+  })
+}
+
+async function getById(req, res) {
+  const { academyId } = req.academy
+  const { reportId } = req.params
+
+  const report = await reportService.getById({ academyId, reportId })
+
+  return res.status(200).json({
+    success: true,
+    report,
+    message: '리포트 상세 조회 성공',
+  })
+}
+
+async function update(req, res) {
+  const { academyId } = req.academy
+  const { reportId } = req.params
+  const { teacherFeedback } = req.body
+
+  const report = await reportService.update({ academyId, reportId, teacherFeedback })
+
+  return res.status(200).json({
+    success: true,
+    report,
+    message: '피드백이 수정되었습니다.',
+  })
+}
+
+module.exports = { preview, create, createShareLink, list, getById, update }

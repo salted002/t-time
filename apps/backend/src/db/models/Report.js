@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       studentId: { type: DataTypes.UUID, allowNull: false },
       examIds: { type: DataTypes.JSON, allowNull: false }, // 최근 10회 기준 시험 ID 목록
       subjectNames: { type: DataTypes.JSON, allowNull: false }, // 생성 시 선택한 과목명 목록
+      subjectStats: { type: DataTypes.JSON, allowNull: false }, // 저장 시점의 점수·반평균 스냅샷
       aiFeedback: { type: DataTypes.JSON, allowNull: true }, // 저장 시점에만 생성되는 스냅샷
       teacherFeedback: { type: DataTypes.JSON, allowNull: true },
     },

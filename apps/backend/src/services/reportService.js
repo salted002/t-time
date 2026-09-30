@@ -1,8 +1,12 @@
+const { Op } = require('sequelize')
 const db = require('../db/models')
+const crypto = require('crypto')
 const examStatsService = require('./examStatsService')
 const aiFeedbackService = require('./aiFeedbackService')
 
 const RECENT_TREND_LIMIT = 10 // 리포트는 학생 성적탭(6회)과 다르게 "최근 10회" 기준
+const SHARE_LINK_TTL_MS = 14 * 24 * 60 * 60 * 1000 // 2주
+const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL
 
 function throwError(statusCode, message) {
   const error = new Error(message)
@@ -10,6 +14,165 @@ function throwError(statusCode, message) {
   throw error
 }
 
+// 리포트 미리보기 — 단일 흐름: 이 시험 하나를 기준으로 리포트 미리보기 생성
+async function previewSingle({ academy, student, examId, subscribed }) {
+  const targetParticipant = await db.ExamParticipant.findOne({
+    where: { studentId: student.id, examId },
+    include: [
+      {
+        model: db.Exam,
+        where: { academyId: academy.id },
+        include: [{ model: db.ExamSubject }],
+      },
+      { model: db.ExamScore },
+    ],
+  })
+
+  if (!targetParticipant) {
+    throwError(404, '학생이 해당 시험의 응시자가 아닙니다.')
+  }
+
+  const exam = targetParticipant.Exam
+  if (exam.evalType === 'grade') {
+    throwError(422, '등급형 시험은 리포트를 생성할 수 없습니다.')
+  }
+
+  const subjectNames = exam.ExamSubjects.map((subject) => subject.name)
+
+  // 같은 시험의 반 전체 응시자 (석차·반평균 계산용)
+  const allParticipants = await db.ExamParticipant.findAll({
+    where: { examId },
+    include: [{ model: db.ExamScore }],
+  })
+
+  const withScoresBySubject = allParticipants.map((participant) => ({
+    participantId: participant.id,
+    scoresBySubject: new Map(participant.ExamScores.map((score) => [score.subjectId, score])),
+  }))
+
+  const { ranked, classAverageTotal } = examStatsService.computeTotals({
+    isGradeExam: false,
+    examSubjects: exam.ExamSubjects,
+    participants: withScoresBySubject,
+  })
+  const subjectStatsThisExam = examStatsService.computeSubjectStats({
+    examSubjects: exam.ExamSubjects,
+    participants: withScoresBySubject,
+  })
+
+  const mine = ranked.find((p) => p.participantId === targetParticipant.id)
+  const myScoresBySubject = new Map(
+    targetParticipant.ExamScores.map((score) => [score.subjectId, score]),
+  )
+
+  const resultsRows = exam.ExamSubjects.map((subject) => {
+    const myScore = myScoresBySubject.get(subject.id)
+    const stats = subjectStatsThisExam.get(subject.id)
+    const myRank = stats
+      ? stats.ranks.find((rank) => rank.participantId === targetParticipant.id)
+      : null
+
+    return {
+      subjectName: subject.name,
+      score: myScore ? myScore.score : null,
+      gradeLabel: null,
+      maxScore: subject.maxScore,
+      classAverage: stats ? stats.average : null,
+      subjectRank: myRank ? myRank.rank : null,
+    }
+  })
+
+  const maxScoreTotal =
+    exam.evalType === 'score_max'
+      ? exam.ExamSubjects.reduce(
+          (sum, subject) => sum + (subject.maxScore ? Number(subject.maxScore) : 0),
+          0,
+        )
+      : null
+
+  const resultsTable = {
+    rows: resultsRows,
+    total: {
+      score: mine ? mine.total : null,
+      maxScoreTotal,
+      classAverage: classAverageTotal,
+      rank: mine ? mine.rank : null,
+    },
+  }
+
+  const shared = await buildTrendAndFeedback({ academy, student, subjectNames, subscribed })
+
+  // 단일 흐름만 personalVsExamAverage를 채운다 (이 시험 기준 개인점수 vs 시험평균)
+  subjectNames.forEach((subjectName) => {
+    const subject = exam.ExamSubjects.find((s) => s.name === subjectName)
+    const myScore = myScoresBySubject.get(subject.id)
+    const stats = subjectStatsThisExam.get(subject.id)
+    const myRank = stats
+      ? stats.ranks.find((rank) => rank.participantId === targetParticipant.id)
+      : null
+
+    shared.subjectStats[subjectName].personalVsExamAverage = {
+      score: myScore ? myScore.score : null,
+      examAverage: stats ? stats.average : null,
+      subjectRank: myRank ? myRank.rank : null,
+    }
+  })
+
+  return {
+    studentId: student.id,
+    studentName: student.name,
+    className: student.Class ? student.Class.name : null,
+    examId: exam.id,
+    subjectNames,
+    examIds: shared.examIds,
+    resultsTable,
+    subjectStats: shared.subjectStats,
+    aiSubjectFeedback: shared.aiSubjectFeedback,
+    aiOverallFeedback: shared.aiOverallFeedback,
+    subscribed,
+    linkExpiresAt: shared.linkExpiresAt,
+  }
+}
+
+// 리포트 미리보기 — 일괄 흐름: 과목명 목록을 기준으로 리포트 미리보기 생성
+// (특정 시험 하나가 아니라 "최근 10회" 전체가 대상)
+async function previewBulk({ academy, student, subjectNames, subscribed }) {
+  const recentSubjectNames = await examStatsService.getRecentExamSubjectNames({
+    academyId: academy.id,
+    studentId: student.id,
+    limit: RECENT_TREND_LIMIT,
+  })
+
+  const resolvedSubjectNames = subjectNames.filter((name) => recentSubjectNames.has(name))
+
+  if (resolvedSubjectNames.length === 0) {
+    throwError(422, '선택한 과목 중 이 학생이 응시한 과목이 하나도 없습니다.')
+  }
+
+  const shared = await buildTrendAndFeedback({
+    academy,
+    student,
+    subjectNames: resolvedSubjectNames,
+    subscribed,
+  })
+
+  return {
+    studentId: student.id,
+    studentName: student.name,
+    className: student.Class ? student.Class.name : null,
+    examId: null,
+    subjectNames: resolvedSubjectNames,
+    examIds: shared.examIds,
+    resultsTable: null,
+    subjectStats: shared.subjectStats,
+    aiSubjectFeedback: shared.aiSubjectFeedback,
+    aiOverallFeedback: shared.aiOverallFeedback,
+    subscribed,
+    linkExpiresAt: shared.linkExpiresAt,
+  }
+}
+
+// 리포트 미리보기
 async function preview({ academyId, studentId, examId, subjectNames }) {
   const hasExamId = Boolean(examId)
   const hasSubjectNames = Array.isArray(subjectNames) && subjectNames.length > 0
@@ -112,162 +275,89 @@ async function buildTrendAndFeedback({ academy, student, subjectNames, subscribe
   }
 }
 
-// 리포트 미리보기 — 단일 흐름: 이 시험 하나를 기준으로 리포트 미리보기 생성
-async function previewSingle({ academy, student, examId, subscribed }) {
-  const targetParticipant = await db.ExamParticipant.findOne({
-    where: { studentId: student.id, examId },
-    include: [
-      {
-        model: db.Exam,
-        where: { academyId: academy.id },
-        include: [{ model: db.ExamSubject }],
-      },
-      { model: db.ExamScore },
-    ],
+// examIds 기준 subjectStats 스냅샷 계산 (저장 시점에 딱 한 번 호출)
+async function buildSubjectStatsSnapshot({ academy, student, examId, examIds, subjectNames }) {
+  const trendBySubjectName = await examStatsService.getTrendByExamIds({
+    studentId: student.id,
+    examIds,
+    subjectNames,
+  })
+  const classAveragesByExam = await examStatsService.getClassAveragesBySubjectName({ examIds })
+
+  const subjectRankByName = examId
+    ? await computeSubjectRanksForExam({ academyId: academy.id, studentId: student.id, examId })
+    : new Map()
+
+  const subjectStats = {}
+  subjectNames.forEach((subjectName) => {
+    const personalHistory = trendBySubjectName.get(subjectName) || []
+    const classAverageHistory = personalHistory.map((entry) => ({
+      examId: entry.examId,
+      examDate: entry.examDate,
+      average: classAveragesByExam.get(entry.examId)?.get(subjectName) ?? null,
+    }))
+
+    let personalVsExamAverage = null
+    if (examId) {
+      const targetEntry = personalHistory.find((entry) => entry.examId === examId)
+      personalVsExamAverage = {
+        score: targetEntry ? targetEntry.score : null,
+        examAverage: classAveragesByExam.get(examId)?.get(subjectName) ?? null,
+        subjectRank: subjectRankByName.get(subjectName) ?? null,
+      }
+    }
+
+    subjectStats[subjectName] = {
+      personalVsExamAverage,
+      recent10: personalHistory,
+      classAverageRecent10: classAverageHistory,
+    }
   })
 
-  if (!targetParticipant) {
-    throwError(404, '학생이 해당 시험의 응시자가 아닙니다.')
-  }
+  return subjectStats
+}
+
+// 특정 시험에서 이 학생의 "과목별 석차"만 계산한다. (create 시점에 examId가 있을 때만 호출)
+async function computeSubjectRanksForExam({ academyId, studentId, examId }) {
+  const targetParticipant = await db.ExamParticipant.findOne({
+    where: { studentId, examId },
+    include: [{ model: db.Exam, where: { academyId }, include: [{ model: db.ExamSubject }] }],
+  })
+  if (!targetParticipant) return new Map()
 
   const exam = targetParticipant.Exam
-  if (exam.evalType === 'grade') {
-    throwError(422, '등급형 시험은 리포트를 생성할 수 없습니다.')
-  }
 
-  const subjectNames = exam.ExamSubjects.map((subject) => subject.name)
-
-  // 같은 시험의 반 전체 응시자 (석차·반평균 계산용)
   const allParticipants = await db.ExamParticipant.findAll({
     where: { examId },
     include: [{ model: db.ExamScore }],
   })
-
   const withScoresBySubject = allParticipants.map((participant) => ({
     participantId: participant.id,
     scoresBySubject: new Map(participant.ExamScores.map((score) => [score.subjectId, score])),
   }))
 
-  const { ranked, classAverageTotal } = examStatsService.computeTotals({
-    isGradeExam: false,
-    examSubjects: exam.ExamSubjects,
-    participants: withScoresBySubject,
-  })
   const subjectStatsThisExam = examStatsService.computeSubjectStats({
     examSubjects: exam.ExamSubjects,
     participants: withScoresBySubject,
   })
 
-  const mine = ranked.find((p) => p.participantId === targetParticipant.id)
-  const myScoresBySubject = new Map(
-    targetParticipant.ExamScores.map((score) => [score.subjectId, score]),
-  )
-
-  const resultsRows = exam.ExamSubjects.map((subject) => {
-    const myScore = myScoresBySubject.get(subject.id)
+  const rankBySubjectName = new Map()
+  exam.ExamSubjects.forEach((subject) => {
     const stats = subjectStatsThisExam.get(subject.id)
     const myRank = stats
       ? stats.ranks.find((rank) => rank.participantId === targetParticipant.id)
       : null
-
-    return {
-      subjectName: subject.name,
-      score: myScore ? myScore.score : null,
-      gradeLabel: null,
-      maxScore: subject.maxScore,
-      classAverage: stats ? stats.average : null,
-      subjectRank: myRank ? myRank.rank : null,
-    }
+    rankBySubjectName.set(subject.name, myRank ? myRank.rank : null)
   })
 
-  const maxScoreTotal =
-    exam.evalType === 'score_max'
-      ? exam.ExamSubjects.reduce(
-          (sum, subject) => sum + (subject.maxScore ? Number(subject.maxScore) : 0),
-          0,
-        )
-      : null
-
-  const resultsTable = {
-    rows: resultsRows,
-    total: {
-      score: mine ? mine.total : null,
-      maxScoreTotal,
-      classAverage: classAverageTotal,
-      rank: mine ? mine.rank : null,
-    },
-  }
-
-  const shared = await buildTrendAndFeedback({ academy, student, subjectNames, subscribed })
-
-  // 단일 흐름만 personalVsExamAverage를 채운다 (이 시험 기준 개인점수 vs 시험평균)
-  subjectNames.forEach((subjectName) => {
-    const subject = exam.ExamSubjects.find((s) => s.name === subjectName)
-    const myScore = myScoresBySubject.get(subject.id)
-    const stats = subjectStatsThisExam.get(subject.id)
-    shared.subjectStats[subjectName].personalVsExamAverage = {
-      score: myScore ? myScore.score : null,
-      examAverage: stats ? stats.average : null,
-    }
-  })
-
-  return {
-    studentId: student.id,
-    studentName: student.name,
-    className: student.Class ? student.Class.name : null,
-    examId: exam.id,
-    subjectNames,
-    examIds: shared.examIds,
-    resultsTable,
-    subjectStats: shared.subjectStats,
-    aiSubjectFeedback: shared.aiSubjectFeedback,
-    aiOverallFeedback: shared.aiOverallFeedback,
-    subscribed,
-    linkExpiresAt: shared.linkExpiresAt,
-  }
+  return rankBySubjectName
 }
 
-// 리포트 미리보기 — 일괄 흐름: 과목명 목록을 기준으로 리포트 미리보기 생성
-// (특정 시험 하나가 아니라 "최근 10회" 전체가 대상)
-async function previewBulk({ academy, student, subjectNames, subscribed }) {
-  const recentSubjectNames = await examStatsService.getRecentExamSubjectNames({
-    academyId: academy.id,
-    studentId: student.id,
-    limit: RECENT_TREND_LIMIT,
-  })
-
-  const resolvedSubjectNames = subjectNames.filter((name) => recentSubjectNames.has(name))
-
-  if (resolvedSubjectNames.length === 0) {
-    throwError(422, '선택한 과목 중 이 학생이 응시한 과목이 하나도 없습니다.')
-  }
-
-  const shared = await buildTrendAndFeedback({
-    academy,
-    student,
-    subjectNames: resolvedSubjectNames,
-    subscribed,
-  })
-
-  return {
-    studentId: student.id,
-    studentName: student.name,
-    className: student.Class ? student.Class.name : null,
-    examId: null,
-    subjectNames: resolvedSubjectNames,
-    examIds: shared.examIds,
-    resultsTable: null,
-    subjectStats: shared.subjectStats,
-    aiSubjectFeedback: shared.aiSubjectFeedback,
-    aiOverallFeedback: shared.aiOverallFeedback,
-    subscribed,
-    linkExpiresAt: shared.linkExpiresAt,
-  }
-}
-
+// 리포트 생성
 async function create({
   academyId,
   studentId,
+  examId, // 단일 흐름이면 값 있고, 일괄 흐름이면 undefined
   examIds,
   subjectNames,
   teacherFeedback,
@@ -303,13 +393,27 @@ async function create({
     throwError(400, '유효하지 않은 examId가 포함되어 있습니다.')
   }
 
+  // 추가: examId가 있으면 examIds 안에 포함된 값이어야 함
+  if (examId && !examIds.includes(examId)) {
+    throwError(400, 'examId는 examIds에 포함되어 있어야 합니다.')
+  }
+
   const subscribed = academy.subscriptionStatus === 'SUBSCRIBED'
+
+  const subjectStats = await buildSubjectStatsSnapshot({
+    academy,
+    student,
+    examId,
+    examIds,
+    subjectNames,
+  })
 
   const report = await db.Report.create({
     academyId,
     studentId,
     examIds,
     subjectNames,
+    subjectStats,
     teacherFeedback: teacherFeedback ?? null,
     aiFeedback: subscribed ? (aiFeedback ?? null) : null,
   })
@@ -322,15 +426,118 @@ async function create({
   }
 }
 
-const crypto = require('crypto')
+// 리포트 목록 조회
+async function list({ academyId, page, size, q }) {
+  const pageNum = Number(page) > 0 ? Number(page) : 1
+  const sizeNum = Number(size) > 0 ? Number(size) : 10
 
-const SHARE_LINK_TTL_MS = 14 * 24 * 60 * 60 * 1000 // 2주
-const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL
+  const { count, rows } = await db.Report.findAndCountAll({
+    where: { academyId },
+    include: [
+      {
+        model: db.Student,
+        attributes: ['id', 'name'],
+        required: true,
+        where: q ? { name: { [Op.iLike]: `%${q}%` } } : undefined,
+      },
+    ],
+    order: [['createdAt', 'DESC']],
+    limit: sizeNum,
+    offset: (pageNum - 1) * sizeNum,
+    distinct: true,
+  })
 
+  const reportIds = rows.map((report) => report.id)
+  const shareLinks = await db.ReportShareLink.findAll({
+    where: { reportId: reportIds },
+    order: [['createdAt', 'DESC']],
+  })
+
+  const latestLinkByReport = new Map()
+  shareLinks.forEach((link) => {
+    if (!latestLinkByReport.has(link.reportId)) {
+      latestLinkByReport.set(link.reportId, link)
+    }
+  })
+
+  const now = new Date()
+  const reports = rows.map((report) => {
+    const latest = latestLinkByReport.get(report.id)
+    let shareLinkStatus = '없음'
+    if (latest) {
+      shareLinkStatus = latest.expiresAt > now ? '유효' : '만료됨'
+    }
+
+    return {
+      id: report.id,
+      studentId: report.studentId,
+      studentName: report.Student.name,
+      subjectCount: report.subjectNames.length,
+      createdAt: report.createdAt,
+      shareLinkStatus,
+      shareLinkExpiresAt: latest ? latest.expiresAt : null,
+    }
+  })
+
+  return { reports, count, page: pageNum, size: sizeNum }
+}
+
+// 리포트 상세 조회 — 저장 시점 스냅샷을 그대로 반환 (재계산 없음)
+async function getById({ academyId, reportId }) {
+  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
+  if (!academy) {
+    throwError(401, '유효하지 않은 토큰입니다.')
+  }
+
+  const report = await db.Report.findOne({
+    where: { id: reportId, academyId },
+    include: [
+      {
+        model: db.Student,
+        attributes: ['id', 'name'],
+        include: [{ model: db.Class, attributes: ['id', 'name'], required: false }],
+      },
+    ],
+  })
+  if (!report) {
+    throwError(404, '리포트를 찾을 수 없습니다.')
+  }
+
+  const subscribed = academy.subscriptionStatus === 'SUBSCRIBED'
+
+  const latestLink = await db.ReportShareLink.findOne({
+    where: { reportId: report.id },
+    order: [['createdAt', 'DESC']],
+  })
+
+  return {
+    id: report.id,
+    studentId: report.studentId,
+    studentName: report.Student.name,
+    className: report.Student.Class ? report.Student.Class.name : null,
+    subjectNames: report.subjectNames,
+    examIds: report.examIds,
+    subjectStats: report.subjectStats,
+    teacherFeedback: report.teacherFeedback,
+    aiFeedback: subscribed ? report.aiFeedback : null,
+    subscribed,
+    shareLink: latestLink
+      ? {
+          url: buildShareUrl(latestLink.token),
+          expiresAt: latestLink.expiresAt,
+          expired: latestLink.expiresAt <= new Date(),
+        }
+      : null,
+    createdAt: report.createdAt,
+  }
+}
+
+// 리포트 공유 링크 URL 조립
 function buildShareUrl(token) {
   return `${FRONTEND_BASE_URL}/share/${token}`
 }
 
+// 리포트 공유 링크 생성: 만료 안 된 기존 링크가 있으면 재사용, 없으면 새로 발급
 async function createShareLink({ academyId, reportId }) {
   const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
   if (!academy) {
@@ -378,4 +585,28 @@ async function createShareLink({ academyId, reportId }) {
   }
 }
 
-module.exports = { preview, create, createShareLink }
+// 리포트 상세 — 선생님 피드백 수정 (유일하게 수정 가능한 필드)
+async function update({ academyId, reportId, teacherFeedback }) {
+  if (teacherFeedback === undefined) {
+    throwError(400, 'teacherFeedback은 필수입니다.')
+  }
+
+  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
+  if (!academy) {
+    throwError(401, '유효하지 않은 토큰입니다.')
+  }
+
+  const report = await db.Report.findOne({ where: { id: reportId, academyId } })
+  if (!report) {
+    throwError(404, '리포트를 찾을 수 없습니다.')
+  }
+
+  await report.update({ teacherFeedback })
+
+  return {
+    id: report.id,
+    teacherFeedback: report.teacherFeedback,
+  }
+}
+
+module.exports = { preview, create, list, getById, createShareLink, update }
