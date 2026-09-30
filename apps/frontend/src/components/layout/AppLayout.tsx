@@ -4,15 +4,15 @@ import { AppSidebar } from '@/components/layout/AppSidebar'
 import { AppHeader } from '@/components/layout/AppHeader'
 import { ACADEMY_NAV } from '@/lib/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { useAuthMe } from '@/hooks/useAuthMe'
 
 export function AppLayout() {
   const { slug } = useParams()
   const { user, logout } = useAuth()
+  const { me, loading: meLoading } = useAuthMe()
   const navigate = useNavigate()
-  const userName = user?.name ?? '관리자'
-
-  // TODO: /auth/me가 생기면 useAuth()의 academy로 교체
-  const academy = { name: '한빛영어학원', logoUrl: null }
+  const userName = me?.user.name ?? user?.name ?? '관리자'
+  const academy = { name: me?.academy.name ?? '', logoUrl: me?.academy.logoUrl ?? null }
 
   const handleLogout = () => {
     logout()
@@ -28,7 +28,13 @@ export function AppLayout() {
         account={{ name: userName, role: '관리자' }}
       />
       <SidebarInset>
-        <AppHeader userName={userName} userEmail={user?.email ?? ''} onLogout={handleLogout} />
+        <AppHeader
+          me={me}
+          meLoading={meLoading}
+          userName={user?.name ?? '관리자'}
+          userEmail={user?.email ?? ''}
+          onLogout={handleLogout}
+        />
         <main className="px-8 py-6">
           <Outlet />
         </main>
