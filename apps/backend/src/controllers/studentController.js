@@ -4,7 +4,7 @@ const { parsePagination } = require('../utils/paginationUtil')
 async function list(req, res) {
   const { academyId } = req.academy
   const { classId, status, q } = req.query
-  const { page, size, limit, offset } = parsePagination(req.query)
+  const { page, size, limit, offset } = parsePagination(req.query, 10)
 
   const { students, count } = await studentService.list({
     academyId,

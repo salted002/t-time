@@ -140,15 +140,10 @@ async function previewSingle({ academy, student, examId, subscribed }) {
   // 같은 시험의 반 전체 응시자 (석차·반평균 계산용)
   const allParticipants = await db.ExamParticipant.findAll({
     where: { examId },
-    include: [
-      { model: db.Student, attributes: ['id', 'status'], required: false },
-      { model: db.ExamScore },
-    ],
+    include: [{ model: db.ExamScore }],
   })
-  const activeParticipants = allParticipants.filter(
-    (participant) => !participant.Student || participant.Student.status === '재원',
-  )
-  const withScoresBySubject = activeParticipants.map((participant) => ({
+
+  const withScoresBySubject = allParticipants.map((participant) => ({
     participantId: participant.id,
     scoresBySubject: new Map(participant.ExamScores.map((score) => [score.subjectId, score])),
   }))

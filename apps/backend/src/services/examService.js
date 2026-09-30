@@ -160,7 +160,7 @@ async function getById({ academyId, examId }) {
   const exam = await db.Exam.findOne({
     where: { id: examId, academyId },
     include: [
-      { model: db.Class, attributes: ['id', 'name'], require: false },
+      { model: db.Class, attributes: ['id', 'name'], required: false },
       { model: db.ExamSubject },
       { model: db.ExamGrade },
     ],
@@ -180,12 +180,8 @@ async function getById({ academyId, examId }) {
     ],
   })
 
-  const activeParticipants = participants.filter(
-    (participant) => !participant.Student || participant.Student.status === '재원',
-  )
-
   // participant별로 "과목id → ExamScore" 맵을 만들어둔다. (examStatsService 함수들이 이 형태를 기대함)
-  const withScoresBySubject = activeParticipants.map((participant) => ({
+  const withScoresBySubject = participants.map((participant) => ({
     participantId: participant.id,
     studentId: participant.studentId,
     studentName: participant.Student ? participant.Student.name : participant.studentNameSnapshot,
@@ -224,15 +220,28 @@ async function getById({ academyId, examId }) {
       scores,
       total: participant.total,
       average:
-        !isGradeExam && exam.ExamSubjects.length
+        !isGradeExam && participant.total !== null && exam.ExamSubjects.length
           ? Number((participant.total / exam.ExamSubjects.length).toFixed(1))
           : null,
       totalRank: isGradeExam ? null : participant.rank,
+      subjectRanks: exam.ExamSubjects.map((subject) => ({
+        subjectId: subject.id,
+        rank:
+          subjectStats
+            .get(subject.id)
+            ?.ranks.find((r) => r.participantId === participant.participantId)?.rank ?? null,
+      })),
       teacherComment: participant.teacherComment,
     }
   })
 
-  const activeStudentIds = activeParticipants.map((p) => p.studentId).filter(Boolean)
+  // 석차 오름차순 → 이름 오름차순 (등급형은 rank가 없으므로 이름순)
+  const rankNumber = (p) => (p.totalRank ? parseInt(p.totalRank, 10) : Infinity)
+  scored.sort(
+    (a, b) => rankNumber(a) - rankNumber(b) || a.studentName.localeCompare(b.studentName, 'ko'),
+  )
+
+  const participantStudentIds = participants.map((p) => p.studentId).filter(Boolean)
 
   const excludedStudentRows = exam.classId
     ? await db.Student.findAll({
@@ -240,7 +249,7 @@ async function getById({ academyId, examId }) {
           academyId,
           classId: exam.classId,
           status: '재원',
-          id: { [Op.notIn]: activeStudentIds.length ? activeStudentIds : [null] },
+          id: { [Op.notIn]: participantStudentIds.length ? participantStudentIds : [null] },
         },
       })
     : []
@@ -254,6 +263,15 @@ async function getById({ academyId, examId }) {
         })),
         total: classAverageTotal,
       }
+
+  const trendByName = isGradeExam
+    ? null
+    : await examStatsService.getClassAverageTrend({
+        academyId,
+        classId: exam.classId,
+        examDate: exam.examDate,
+        limit: 6,
+      })
 
   return {
     id: exam.id,
@@ -279,6 +297,16 @@ async function getById({ academyId, examId }) {
       name: student.name,
     })),
     classAverage,
+    subjectTrend: isGradeExam
+      ? null
+      : exam.ExamSubjects.map((s) => ({ subjectId: s.id, history: trendByName.get(s.name) || [] })),
+    gradeDistribution: isGradeExam
+      ? examStatsService.computeGradeDistribution({
+          examSubjects: exam.ExamSubjects,
+          examGrades: exam.ExamGrades,
+          participants: withScoresBySubject,
+        })
+      : null,
   }
 }
 
@@ -342,18 +370,40 @@ async function saveResults({ academyId, examId, participants }) {
     existingParticipants.map((participant) => [participant.id, participant]),
   )
 
-  participants.forEach((item) => {
-    if (item.participantId && !existingById.has(item.participantId)) {
-      throwError(400, '존재하지 않는 응시자입니다.')
-    }
-  })
-
   const incomingParticipantIds = new Set(
     participants.filter((item) => item.participantId).map((item) => item.participantId),
   )
   const toDelete = existingParticipants.filter(
     (participant) => !incomingParticipantIds.has(participant.id),
   )
+
+  // 이번 요청 후에도 남는 기존 응시자의 학생 id (삭제 대상은 제외 → 삭제 후 재등록은 허용)
+  const keptStudentIds = new Set(
+    existingParticipants
+      .filter((participant) => incomingParticipantIds.has(participant.id))
+      .map((participant) => participant.studentId)
+      .filter(Boolean),
+  )
+
+  const seenParticipantIds = new Set()
+  const seenStudentIds = new Set()
+
+  participants.forEach((item) => {
+    if (item.participantId) {
+      if (!existingById.has(item.participantId)) {
+        throwError(400, '존재하지 않는 응시자입니다.')
+      }
+      if (seenParticipantIds.has(item.participantId)) {
+        throwError(400, '중복된 응시자가 있습니다.')
+      }
+      seenParticipantIds.add(item.participantId)
+    } else {
+      if (seenStudentIds.has(item.studentId) || keptStudentIds.has(item.studentId)) {
+        throwError(400, '이미 응시자로 등록된 학생입니다.')
+      }
+      seenStudentIds.add(item.studentId)
+    }
+  })
 
   await db.sequelize.transaction(async (t) => {
     for (const participant of toDelete) {

@@ -228,9 +228,10 @@ async function getExamResults({ academyId, studentId, limit, offset }) {
     include: [
       {
         model: db.Exam,
+        required: true,
         include: [
           { model: db.Class, attributes: ['id', 'name'], required: false },
-          { model: db.ExamSubject },
+          { model: db.ExamSubject, separate: true },
         ],
       },
     ],
@@ -240,7 +241,6 @@ async function getExamResults({ academyId, studentId, limit, offset }) {
     ],
     limit,
     offset,
-    subQuery: false,
   })
 
   const examResults = rows.map((participant) => ({
@@ -320,8 +320,16 @@ async function getExamResultDetail({ academyId, studentId, examId }) {
 
   if (!isGradeExam) {
     const mine = ranked.find((p) => p.participantId === targetParticipant.id)
-    myTotalRank = mine ? mine.rank : null
-    myTotal = mine ? mine.total : null
+    myTotalRank = mine ? mine.rank : null // 통계 제외 대상이면 석차 없음
+    myTotal = mine
+      ? mine.total
+      : examStatsService.computeTotal({
+          isGradeExam,
+          examSubjects: exam.ExamSubjects,
+          scoresBySubject: new Map(
+            targetParticipant.ExamScores.map((score) => [score.subjectId, score]),
+          ),
+        }) // 본인 점수는 계산해서 보여줌
   }
 
   const subjectStats = isGradeExam
@@ -417,7 +425,13 @@ async function getExamResultDetail({ academyId, studentId, examId }) {
     teacherComment: targetParticipant.teacherComment,
     subjectComparison,
     recentTrend,
-    gradeDistribution: null,
+    gradeDistribution: isGradeExam
+      ? examStatsService.computeGradeDistribution({
+          examSubjects: exam.ExamSubjects,
+          examGrades: exam.ExamGrades,
+          participants: withScoresBySubject,
+        })
+      : null,
   }
 }
 
