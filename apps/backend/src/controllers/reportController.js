@@ -15,11 +15,12 @@ async function preview(req, res) {
 
 async function create(req, res) {
   const { academyId } = req.academy
-  const { studentId, examIds, subjectNames, teacherFeedback, aiFeedback } = req.body
+  const { studentId, examId, examIds, subjectNames, teacherFeedback, aiFeedback } = req.body
 
   const report = await reportService.create({
     academyId,
     studentId,
+    examId,
     examIds,
     subjectNames,
     teacherFeedback,

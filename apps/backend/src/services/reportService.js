@@ -580,12 +580,15 @@ function buildShareUrl(token) {
 
 // 리포트 공유 링크 생성: 만료 안 된 기존 링크가 있으면 재사용, 없으면 새로 발급
 async function createShareLink({ academyId, reportId, transaction }) {
-  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
+  const academy = await db.Academy.findOne({
+    where: { id: academyId, deletedAt: null },
+    transaction,
+  })
   if (!academy) {
     throwError(401, '유효하지 않은 토큰입니다.')
   }
 
-  const report = await db.Report.findOne({ where: { id: reportId, academyId } })
+  const report = await db.Report.findOne({ where: { id: reportId, academyId }, transaction })
   if (!report) {
     throwError(404, '리포트를 찾을 수 없습니다.')
   }
