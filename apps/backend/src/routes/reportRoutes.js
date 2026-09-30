@@ -11,5 +11,7 @@ router.get('/:reportId', authenticateAcademy, reportController.getById)
 router.patch('/:reportId', authenticateAcademy, reportController.update)
 router.post('/send', authenticateAcademy, reportController.send)
 router.post('/subject-options', authenticateAcademy, reportController.getSubjectOptions)
+router.post('/batch-preview', authenticateAcademy, reportController.batchPreview)
+router.post('/bulk', authenticateAcademy, reportController.createBulk)
 
 module.exports = router

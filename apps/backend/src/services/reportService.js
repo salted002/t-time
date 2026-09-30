@@ -365,6 +365,7 @@ async function create({
   subjectNames,
   teacherFeedback,
   aiFeedback,
+  transaction,
 }) {
   const requiredFields = { studentId, examIds, subjectNames }
   const missingField = Object.entries(requiredFields).find(([, value]) => !value)
@@ -411,15 +412,18 @@ async function create({
     subjectNames,
   })
 
-  const report = await db.Report.create({
-    academyId,
-    studentId,
-    examIds,
-    subjectNames,
-    subjectStats,
-    teacherFeedback: teacherFeedback ?? null,
-    aiFeedback: subscribed ? (aiFeedback ?? null) : null,
-  })
+  const report = await db.Report.create(
+    {
+      academyId,
+      studentId,
+      examIds,
+      subjectNames,
+      subjectStats,
+      teacherFeedback: teacherFeedback ?? null,
+      aiFeedback: subscribed ? (aiFeedback ?? null) : null,
+    },
+    { transaction },
+  )
 
   return {
     id: report.id,
@@ -575,7 +579,7 @@ function buildShareUrl(token) {
 }
 
 // 리포트 공유 링크 생성: 만료 안 된 기존 링크가 있으면 재사용, 없으면 새로 발급
-async function createShareLink({ academyId, reportId }) {
+async function createShareLink({ academyId, reportId, transaction }) {
   const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
   if (!academy) {
     throwError(401, '유효하지 않은 토큰입니다.')
@@ -587,9 +591,11 @@ async function createShareLink({ academyId, reportId }) {
   }
 
   const now = new Date()
+
   const existing = await db.ReportShareLink.findOne({
     where: { reportId },
     order: [['createdAt', 'DESC']],
+    transaction,
   })
 
   if (existing && existing.expiresAt > now) {
@@ -605,11 +611,14 @@ async function createShareLink({ academyId, reportId }) {
   }
 
   const token = crypto.randomBytes(32).toString('hex')
-  const created = await db.ReportShareLink.create({
-    reportId,
-    token,
-    expiresAt: new Date(now.getTime() + SHARE_LINK_TTL_MS),
-  })
+  const created = await db.ReportShareLink.create(
+    {
+      reportId,
+      token,
+      expiresAt: new Date(now.getTime() + SHARE_LINK_TTL_MS),
+    },
+    { transaction },
+  )
 
   return {
     isNew: true,
@@ -620,6 +629,56 @@ async function createShareLink({ academyId, reportId }) {
       expiresAt: created.expiresAt,
     },
   }
+}
+
+// 일괄 생성 결과 중 선택한 리포트들을 저장 + 공유 링크 생성 (하나의 트랜잭션)
+async function createBulk({ academyId, reports }) {
+  if (!Array.isArray(reports) || reports.length === 0) {
+    throwError(400, 'reports는 비어있지 않은 배열이어야 합니다.')
+  }
+
+  return db.sequelize.transaction(async (transaction) => {
+    const created = []
+
+    for (const item of reports) {
+      const { studentId, examIds, subjectNames, teacherFeedback, aiFeedback } = item
+
+      const savedReport = await create({
+        academyId,
+        studentId,
+        examIds,
+        subjectNames,
+        teacherFeedback,
+        aiFeedback,
+        transaction,
+        // examId는 안 넘김 — 일괄 흐름은 항상 undefined
+      })
+
+      const student = await db.Student.findOne({
+        where: { id: studentId, academyId },
+        transaction,
+      })
+
+      const { shareLink } = await createShareLink({
+        academyId,
+        reportId: savedReport.id,
+        transaction,
+      })
+
+      created.push({
+        id: savedReport.id,
+        studentId: savedReport.studentId,
+        studentName: student.name,
+        parentPhone: student.parentPhone,
+        shareLink: {
+          url: shareLink.url,
+          expiresAt: shareLink.expiresAt,
+        },
+      })
+    }
+
+    return created
+  })
 }
 
 // 리포트 상세 — 선생님 피드백 수정 (유일하게 수정 가능한 필드)
@@ -727,6 +786,50 @@ async function send({ academyId, items }) {
   return { results, message: `${items.length}건 중 ${successCount}건 발송 완료` }
 }
 
+async function batchPreview({ academyId, studentIds, subjectNames }) {
+  if (!Array.isArray(studentIds) || studentIds.length === 0) {
+    throwError(400, 'studentIds는 비어있지 않은 배열이어야 합니다.')
+  }
+  if (!Array.isArray(subjectNames) || subjectNames.length === 0) {
+    throwError(400, 'subjectNames는 비어있지 않은 배열이어야 합니다.')
+  }
+
+  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
+  if (!academy) {
+    throwError(401, '유효하지 않은 토큰입니다.')
+  }
+
+  const students = await db.Student.findAll({ where: { id: studentIds, academyId } })
+  if (students.length !== studentIds.length) {
+    throwError(400, '유효하지 않은 studentId가 포함되어 있습니다.')
+  }
+
+  const studentsById = new Map(students.map((student) => [student.id, student]))
+
+  const candidates = await Promise.all(
+    studentIds.map(async (studentId) => {
+      const student = studentsById.get(studentId)
+      const recentSubjectNames = await examStatsService.getRecentExamSubjectNames({
+        academyId,
+        studentId,
+        limit: RECENT_TREND_LIMIT,
+      })
+      const availableSubjects = subjectNames.filter((name) => recentSubjectNames.has(name))
+
+      return {
+        studentId,
+        studentName: student.name,
+        availableSubjects,
+        generatable: availableSubjects.length > 0,
+      }
+    }),
+  )
+
+  const generatableCount = candidates.filter((c) => c.generatable).length
+
+  return { candidates, generatableCount }
+}
+
 module.exports = {
   preview,
   create,
@@ -736,4 +839,6 @@ module.exports = {
   update,
   send,
   getSubjectOptions,
+  batchPreview,
+  createBulk,
 }

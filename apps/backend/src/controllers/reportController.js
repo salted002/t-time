@@ -125,6 +125,37 @@ async function getSubjectOptions(req, res) {
   })
 }
 
+async function batchPreview(req, res) {
+  const { academyId } = req.academy
+  const { studentIds, subjectNames } = req.body
+
+  const { candidates, generatableCount } = await reportService.batchPreview({
+    academyId,
+    studentIds,
+    subjectNames,
+  })
+
+  return res.status(200).json({
+    success: true,
+    candidates,
+    generatableCount,
+    message: `생성 가능한 리포트 ${generatableCount}건`,
+  })
+}
+
+async function createBulk(req, res) {
+  const { academyId } = req.academy
+  const { reports } = req.body
+
+  const created = await reportService.createBulk({ academyId, reports })
+
+  return res.status(201).json({
+    success: true,
+    reports: created,
+    message: `${created.length}건의 리포트가 저장되었습니다.`,
+  })
+}
+
 module.exports = {
   preview,
   create,
@@ -134,4 +165,6 @@ module.exports = {
   update,
   send,
   getSubjectOptions,
+  batchPreview,
+  createBulk,
 }
