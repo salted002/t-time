@@ -133,10 +133,87 @@ async function getRecentTrendByStudent({ academyId, studentId, subjectNames, lim
   return trendBySubjectName
 }
 
+/**
+ * 여러 시험(examIds)의 "과목명별 반평균"을 한 번에 계산한다.
+ * 리포트의 "같은 반 평균 대비 10회 추이"처럼, 과거 여러 시험 각각의 반평균이 필요할 때 쓴다.
+ * 반환값: Map<examId, Map<subjectName, average>>
+ */
+async function getClassAveragesBySubjectName({ examIds }) {
+  if (examIds.length === 0) return new Map()
+
+  const participants = await db.ExamParticipant.findAll({
+    where: { examId: examIds },
+    include: [
+      { model: db.Student, attributes: ['id', 'status'], required: false },
+      { model: db.ExamScore },
+      { model: db.Exam, attributes: ['id'], include: [{ model: db.ExamSubject }] },
+    ],
+  })
+
+  const participantsByExam = new Map(examIds.map((id) => [id, []]))
+  participants.forEach((participant) => {
+    if (participant.Student && participant.Student.status !== '재원') return
+    participantsByExam.get(participant.examId).push(participant)
+  })
+
+  const result = new Map()
+  examIds.forEach((examId) => {
+    const examParticipants = participantsByExam.get(examId)
+    const exam = examParticipants[0] ? examParticipants[0].Exam : null
+    const averagesBySubjectName = new Map()
+
+    if (exam) {
+      exam.ExamSubjects.forEach((subject) => {
+        const values = examParticipants
+          .map((participant) =>
+            participant.ExamScores.find((score) => score.subjectId === subject.id),
+          )
+          .filter((score) => score && score.score !== null)
+          .map((score) => Number(score.score))
+
+        averagesBySubjectName.set(
+          subject.name,
+          values.length
+            ? Number((values.reduce((sum, v) => sum + v, 0) / values.length).toFixed(1))
+            : null,
+        )
+      })
+    }
+
+    result.set(examId, averagesBySubjectName)
+  })
+
+  return result
+}
+
+/**
+ * 학생이 최근 N회 시험에서 "실제로 응시한 과목명" 전체를 가져온다.
+ * 일괄 리포트 흐름에서 "선택한 과목 중 이 학생이 최근 10회 내 응시한 과목만" 걸러낼 때 쓴다.
+ * 반환값: Set<subjectName>
+ */
+async function getRecentExamSubjectNames({ academyId, studentId, limit }) {
+  const recentParticipants = await db.ExamParticipant.findAll({
+    where: { studentId },
+    include: [{ model: db.Exam, where: { academyId }, include: [{ model: db.ExamSubject }] }],
+    order: [[db.Exam, 'examDate', 'DESC']],
+    limit,
+    subQuery: false,
+  })
+
+  const subjectNames = new Set()
+  recentParticipants.forEach((participant) => {
+    participant.Exam.ExamSubjects.forEach((subject) => subjectNames.add(subject.name))
+  })
+
+  return subjectNames
+}
+
 module.exports = {
   assignRanks,
   computeTotal,
   computeTotals,
   computeSubjectStats,
   getRecentTrendByStudent,
+  getClassAveragesBySubjectName,
+  getRecentExamSubjectNames,
 }
