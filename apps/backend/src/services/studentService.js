@@ -315,18 +315,11 @@ async function getExamResultDetail({ academyId, studentId, examId }) {
 
   const allParticipants = await db.ExamParticipant.findAll({
     where: { examId },
-    include: [
-      { model: db.Student, attributes: ['id', 'status'], required: false },
-      { model: db.ExamScore },
-    ],
+    include: [{ model: db.ExamScore }],
   })
 
-  const activeParticipants = allParticipants.filter(
-    (participant) => !participant.Student || participant.Student.status === '재원',
-  )
-
   // participant별로 "과목id → ExamScore" 맵을 만들어 examStatsService에 넘길 형태로 변환
-  const withScoresBySubject = activeParticipants.map((participant) => ({
+  const withScoresBySubject = allParticipants.map((participant) => ({
     participantId: participant.id,
     scoresBySubject: new Map(participant.ExamScores.map((score) => [score.subjectId, score])),
   }))
@@ -343,15 +336,7 @@ async function getExamResultDetail({ academyId, studentId, examId }) {
   if (!isGradeExam) {
     const mine = ranked.find((p) => p.participantId === targetParticipant.id)
     myTotalRank = mine ? mine.rank : null // 통계 제외 대상이면 석차 없음
-    myTotal = mine
-      ? mine.total
-      : examStatsService.computeTotal({
-          isGradeExam,
-          examSubjects: exam.ExamSubjects,
-          scoresBySubject: new Map(
-            targetParticipant.ExamScores.map((score) => [score.subjectId, score]),
-          ),
-        }) // 본인 점수는 계산해서 보여줌
+    myTotal = mine ? mine.total : null
   }
 
   const subjectStats = isGradeExam
