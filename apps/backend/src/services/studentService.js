@@ -1,13 +1,19 @@
 const { Op } = require('sequelize')
 const db = require('../db/models')
-const examStatsService = require('./examStatsService')
 
 const VALID_STATUSES = ['재원', '휴원', '퇴원']
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 function throwError(statusCode, message) {
   const error = new Error(message)
   error.statusCode = statusCode
   throw error
+}
+
+function assertUuid(id, statusCode, message) {
+  if (typeof id !== 'string' || !UUID_PATTERN.test(id)) {
+    throwError(statusCode, message)
+  }
 }
 
 function toDetailResponse(student) {
@@ -34,6 +40,7 @@ async function list({ academyId, classId, status, q, limit, offset }) {
   const where = { academyId }
 
   if (classId) {
+    assertUuid(classId, 400, '유효하지 않은 반입니다.')
     where.classId = classId
   }
 
@@ -104,6 +111,7 @@ async function create({
   }
 
   if (classId) {
+    assertUuid(classId, 400, '유효하지 않은 반입니다.')
     const studentClass = await db.Class.findOne({ where: { id: classId, academyId } })
     if (!studentClass) {
       throwError(400, '유효하지 않은 반입니다.')
@@ -129,6 +137,8 @@ async function getById({ academyId, studentId }) {
   if (!academy) {
     throwError(401, '유효하지 않은 토큰입니다.')
   }
+
+  assertUuid(studentId, 404, '학생을 찾을 수 없습니다.')
 
   const student = await db.Student.findOne({
     where: { id: studentId, academyId },
@@ -158,15 +168,16 @@ async function update({
     throwError(401, '유효하지 않은 토큰입니다.')
   }
 
-  const resolvedStatus = status || '재원'
-  if (!VALID_STATUSES.includes(resolvedStatus)) {
-    throwError(400, 'status 값이 올바르지 않습니다.')
-  }
+  assertUuid(studentId, 404, '학생을 찾을 수 없습니다.')
 
-  const requiredFields = { name, school, grade, parentPhone }
+  const requiredFields = { name, status, school, grade, parentPhone }
   const missingField = Object.entries(requiredFields).find(([, value]) => !value)
   if (missingField) {
     throwError(400, `${missingField[0]}은(는) 필수입니다.`)
+  }
+
+  if (!VALID_STATUSES.includes(status)) {
+    throwError(400, 'status 값이 올바르지 않습니다.')
   }
 
   const student = await db.Student.findOne({ where: { id: studentId, academyId } })
@@ -175,6 +186,7 @@ async function update({
   }
 
   if (classId) {
+    assertUuid(classId, 400, '유효하지 않은 반입니다.')
     const studentClass = await db.Class.findOne({ where: { id: classId, academyId } })
     if (!studentClass) {
       throwError(400, '유효하지 않은 반입니다.')
@@ -184,7 +196,7 @@ async function update({
   await student.update({
     name,
     classId: classId || null,
-    status: resolvedStatus,
+    status,
     school,
     grade,
     parentPhone,
@@ -205,12 +217,14 @@ async function remove({ academyId, studentId }) {
     throwError(401, '유효하지 않은 토큰입니다.')
   }
 
+  assertUuid(studentId, 404, '학생을 찾을 수 없습니다.')
+
   const student = await db.Student.findOne({ where: { id: studentId, academyId } })
   if (!student) {
     throwError(404, '학생을 찾을 수 없습니다.')
   }
 
-  const deleted = { id: student.id, name: student.name }
+  const deleted ={ id: student.id, name: student.name }
   await student.destroy()
 
   return deleted
@@ -218,6 +232,8 @@ async function remove({ academyId, studentId }) {
 
 // 학생 상세 성적탭 — 시험 목록 조회 : GET /students/{studentId}/exam-results
 async function getExamResults({ academyId, studentId, limit, offset }) {
+  assertUuid(studentId, 404, '학생을 찾을 수 없습니다.')
+
   const student = await db.Student.findOne({ where: { id: studentId, academyId } })
   if (!student) {
     throwError(404, '학생을 찾을 수 없습니다.')
@@ -263,6 +279,9 @@ async function getExamResultDetail({ academyId, studentId, examId }) {
     throwError(401, '유효하지 않은 토큰입니다.')
   }
 
+  assertUuid(studentId, 404, '학생을 찾을 수 없습니다.')
+  assertUuid(examId, 404, '응시 기록을 찾을 수 없습니다.')
+
   const student = await db.Student.findOne({ where: { id: studentId, academyId } })
   if (!student) {
     throwError(404, '학생을 찾을 수 없습니다.')
@@ -303,33 +322,70 @@ async function getExamResultDetail({ academyId, studentId, examId }) {
     (participant) => !participant.Student || participant.Student.status === '재원',
   )
 
-  // participant별로 "과목id → ExamScore" 맵을 만들어 examStatsService에 넘길 형태로 변환
-  const withScoresBySubject = activeParticipants.map((participant) => ({
-    participantId: participant.id,
-    scoresBySubject: new Map(participant.ExamScores.map((score) => [score.subjectId, score])),
-  }))
-
-  const { ranked, classAverageTotal } = examStatsService.computeTotals({
-    isGradeExam,
-    examSubjects: exam.ExamSubjects,
-    participants: withScoresBySubject,
+  const withTotals = activeParticipants.map((participant) => {
+    const scoresBySubject = new Map(participant.ExamScores.map((score) => [score.subjectId, score]))
+    const total = isGradeExam
+      ? null
+      : exam.ExamSubjects.reduce((sum, subject) => {
+          const score = scoresBySubject.get(subject.id)
+          return score && score.score !== null ? sum + Number(score.score) : sum
+        }, 0)
+    return { participantId: participant.id, total, scoresBySubject }
   })
 
   let myTotalRank = null
   let myTotal = null
 
   if (!isGradeExam) {
-    const mine = ranked.find((p) => p.participantId === targetParticipant.id)
-    myTotalRank = mine ? mine.rank : null
+    const sorted = [...withTotals].sort((a, b) => b.total - a.total)
+    let currentRank = 0
+    let previousTotal = null
+
+    sorted.forEach((p, index) => {
+      if (p.total !== previousTotal) {
+        currentRank = index + 1
+        previousTotal = p.total
+      }
+      p.totalRank = `${currentRank}/${sorted.length}`
+    })
+
+    const mine = sorted.find((p) => p.participantId === targetParticipant.id)
+    myTotalRank = mine ? mine.totalRank : null
     myTotal = mine ? mine.total : null
   }
 
-  const subjectStats = isGradeExam
-    ? new Map()
-    : examStatsService.computeSubjectStats({
-        examSubjects: exam.ExamSubjects,
-        participants: withScoresBySubject,
+  const subjectStats = new Map()
+
+  if (!isGradeExam) {
+    exam.ExamSubjects.forEach((subject) => {
+      const values = withTotals
+        .map((p) => {
+          const score = p.scoresBySubject.get(subject.id)
+          return score && score.score !== null
+            ? { participantId: p.participantId, score: Number(score.score) }
+            : null
+        })
+        .filter(Boolean)
+
+      const sorted = [...values].sort((a, b) => b.score - a.score)
+      let currentRank = 0
+      let previousScore = null
+
+      sorted.forEach((v, index) => {
+        if (v.score !== previousScore) {
+          currentRank = index + 1
+          previousScore = v.score
+        }
+        v.rank = `${currentRank}/${sorted.length}`
       })
+
+      const average = values.length
+        ? Number((values.reduce((sum, v) => sum + v.score, 0) / values.length).toFixed(1))
+        : null
+
+      subjectStats.set(subject.id, { average, ranks: sorted })
+    })
+  }
 
   const myScoresBySubject = new Map(
     targetParticipant.ExamScores.map((score) => [score.subjectId, score]),
@@ -359,6 +415,13 @@ async function getExamResultDetail({ academyId, studentId, examId }) {
         )
       : null
 
+  const classAverageTotal =
+    !isGradeExam && withTotals.length
+      ? Number(
+          (withTotals.reduce((sum, p) => sum + (p.total || 0), 0) / withTotals.length).toFixed(1),
+        )
+      : null
+
   let subjectComparison = null
   let recentTrend = null
 
@@ -373,17 +436,40 @@ async function getExamResultDetail({ academyId, studentId, examId }) {
       }
     })
 
-    const subjectNames = exam.ExamSubjects.map((subject) => subject.name)
-    const trendBySubjectName = await examStatsService.getRecentTrendByStudent({
-      academyId,
-      studentId,
-      subjectNames,
+    // 각 학생이 응시한 시험을 최신순으로 정렬하여 6개까지만 가져온다.
+    const recentExamParticipants = await db.ExamParticipant.findAll({
+      where: { studentId },
+      include: [
+        { model: db.Exam, where: { academyId }, include: [{ model: db.ExamSubject }] },
+        { model: db.ExamScore },
+      ],
+      order: [[db.Exam, 'examDate', 'DESC']],
       limit: 6,
+      subQuery: false,
     })
 
+    // 최신순 6개 시험을 거꾸로 정렬.
+    const chronological = [...recentExamParticipants].reverse()
+
+    /**
+     * 시험 과목마다 "이름이 같은" 과목을 찾는다. (subjectId는 매번 다름)
+     * .filter(Boolean)으로 null을 걸러낸다. (Boolean(null)은 false)
+     * */
     recentTrend = exam.ExamSubjects.map((subject) => ({
       subjectId: subject.id,
-      history: trendBySubjectName.get(subject.name) || [],
+      history: chronological
+        .map((participant) => {
+          const matchedSubject = participant.Exam.ExamSubjects.find((s) => s.name === subject.name)
+          if (!matchedSubject) return null
+
+          const score = participant.ExamScores.find((s) => s.subjectId === matchedSubject.id)
+          return {
+            examId: participant.Exam.id,
+            examDate: participant.Exam.examDate,
+            score: score ? score.score : null,
+          }
+        })
+        .filter(Boolean),
     }))
   }
 

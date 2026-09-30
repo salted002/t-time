@@ -1,9 +1,18 @@
 const { Op } = require('sequelize');
 const db = require('../../db/models');
 
-async function list({ limit, offset }) {
+function buildSearchWhere(q) {
+  const where = { deletedAt: null };
+  const keyword = typeof q === 'string' ? q.trim() : '';
+  if (keyword) {
+    where.name = { [Op.iLike]: `%${keyword}%` };
+  }
+  return where;
+}
+
+async function list({ q, limit, offset }) {
   const { rows, count } = await db.Academy.findAndCountAll({
-    where: { deletedAt: null },
+    where: buildSearchWhere(q),
     include: [{ model: db.User, attributes: ['email'], required: false }],
     order: [
       ['createdAt', 'DESC'],
