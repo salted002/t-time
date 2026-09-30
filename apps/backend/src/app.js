@@ -12,7 +12,13 @@ const reportRouter = require('./routes/reportRoutes')
 const messageLogRouter = require('./routes/messageLogRoutes')
 const errorHandler = require('./middlewares/errorHandler')
 
-app.use(cors())
+// 허용할 프론트 origin (쉼표로 여러 개 가능). 기본값은 Vite 개발 서버
+const allowedOrigins = (process.env.FRONTEND_BASE_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+
+app.use(cors({ origin: allowedOrigins }))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
