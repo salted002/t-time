@@ -1,5 +1,6 @@
 const { Op } = require('sequelize')
 const db = require('../db/models')
+const examStatsService = require('./examStatsService')
 
 const VALID_STATUSES = ['재원', '휴원', '퇴원']
 
@@ -302,70 +303,33 @@ async function getExamResultDetail({ academyId, studentId, examId }) {
     (participant) => !participant.Student || participant.Student.status === '재원',
   )
 
-  const withTotals = activeParticipants.map((participant) => {
-    const scoresBySubject = new Map(participant.ExamScores.map((score) => [score.subjectId, score]))
-    const total = isGradeExam
-      ? null
-      : exam.ExamSubjects.reduce((sum, subject) => {
-          const score = scoresBySubject.get(subject.id)
-          return score && score.score !== null ? sum + Number(score.score) : sum
-        }, 0)
-    return { participantId: participant.id, total, scoresBySubject }
+  // participant별로 "과목id → ExamScore" 맵을 만들어 examStatsService에 넘길 형태로 변환
+  const withScoresBySubject = activeParticipants.map((participant) => ({
+    participantId: participant.id,
+    scoresBySubject: new Map(participant.ExamScores.map((score) => [score.subjectId, score])),
+  }))
+
+  const { ranked, classAverageTotal } = examStatsService.computeTotals({
+    isGradeExam,
+    examSubjects: exam.ExamSubjects,
+    participants: withScoresBySubject,
   })
 
   let myTotalRank = null
   let myTotal = null
 
   if (!isGradeExam) {
-    const sorted = [...withTotals].sort((a, b) => b.total - a.total)
-    let currentRank = 0
-    let previousTotal = null
-
-    sorted.forEach((p, index) => {
-      if (p.total !== previousTotal) {
-        currentRank = index + 1
-        previousTotal = p.total
-      }
-      p.totalRank = `${currentRank}/${sorted.length}`
-    })
-
-    const mine = sorted.find((p) => p.participantId === targetParticipant.id)
-    myTotalRank = mine ? mine.totalRank : null
+    const mine = ranked.find((p) => p.participantId === targetParticipant.id)
+    myTotalRank = mine ? mine.rank : null
     myTotal = mine ? mine.total : null
   }
 
-  const subjectStats = new Map()
-
-  if (!isGradeExam) {
-    exam.ExamSubjects.forEach((subject) => {
-      const values = withTotals
-        .map((p) => {
-          const score = p.scoresBySubject.get(subject.id)
-          return score && score.score !== null
-            ? { participantId: p.participantId, score: Number(score.score) }
-            : null
-        })
-        .filter(Boolean)
-
-      const sorted = [...values].sort((a, b) => b.score - a.score)
-      let currentRank = 0
-      let previousScore = null
-
-      sorted.forEach((v, index) => {
-        if (v.score !== previousScore) {
-          currentRank = index + 1
-          previousScore = v.score
-        }
-        v.rank = `${currentRank}/${sorted.length}`
+  const subjectStats = isGradeExam
+    ? new Map()
+    : examStatsService.computeSubjectStats({
+        examSubjects: exam.ExamSubjects,
+        participants: withScoresBySubject,
       })
-
-      const average = values.length
-        ? Number((values.reduce((sum, v) => sum + v.score, 0) / values.length).toFixed(1))
-        : null
-
-      subjectStats.set(subject.id, { average, ranks: sorted })
-    })
-  }
 
   const myScoresBySubject = new Map(
     targetParticipant.ExamScores.map((score) => [score.subjectId, score]),
@@ -395,13 +359,6 @@ async function getExamResultDetail({ academyId, studentId, examId }) {
         )
       : null
 
-  const classAverageTotal =
-    !isGradeExam && withTotals.length
-      ? Number(
-          (withTotals.reduce((sum, p) => sum + (p.total || 0), 0) / withTotals.length).toFixed(1),
-        )
-      : null
-
   let subjectComparison = null
   let recentTrend = null
 
@@ -416,40 +373,17 @@ async function getExamResultDetail({ academyId, studentId, examId }) {
       }
     })
 
-    // 각 학생이 응시한 시험을 최신순으로 정렬하여 6개까지만 가져온다.
-    const recentExamParticipants = await db.ExamParticipant.findAll({
-      where: { studentId },
-      include: [
-        { model: db.Exam, where: { academyId }, include: [{ model: db.ExamSubject }] },
-        { model: db.ExamScore },
-      ],
-      order: [[db.Exam, 'examDate', 'DESC']],
+    const subjectNames = exam.ExamSubjects.map((subject) => subject.name)
+    const trendBySubjectName = await examStatsService.getRecentTrendByStudent({
+      academyId,
+      studentId,
+      subjectNames,
       limit: 6,
-      subQuery: false,
     })
 
-    // 최신순 6개 시험을 거꾸로 정렬.
-    const chronological = [...recentExamParticipants].reverse()
-
-    /**
-     * 시험 과목마다 "이름이 같은" 과목을 찾는다. (subjectId는 매번 다름)
-     * .filter(Boolean)으로 null을 걸러낸다. (Boolean(null)은 false)
-     * */
     recentTrend = exam.ExamSubjects.map((subject) => ({
       subjectId: subject.id,
-      history: chronological
-        .map((participant) => {
-          const matchedSubject = participant.Exam.ExamSubjects.find((s) => s.name === subject.name)
-          if (!matchedSubject) return null
-
-          const score = participant.ExamScores.find((s) => s.subjectId === matchedSubject.id)
-          return {
-            examId: participant.Exam.id,
-            examDate: participant.Exam.examDate,
-            score: score ? score.score : null,
-          }
-        })
-        .filter(Boolean),
+      history: trendBySubjectName.get(subject.name) || [],
     }))
   }
 
