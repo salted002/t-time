@@ -10,6 +10,14 @@ function throwError(statusCode, message) {
   throw error
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function assertUuid(id, statusCode, message) {
+  if (typeof id !== 'string' || !UUID_PATTERN.test(id)) {
+    throwError(statusCode, message)
+  }
+}
+
 function toDetailResponse(student) {
   return {
     id: student.id,
@@ -34,6 +42,7 @@ async function list({ academyId, classId, status, q, limit, offset }) {
   const where = { academyId }
 
   if (classId) {
+    assertUuid(classId, 400, '유효하지 않은 반입니다.')
     where.classId = classId
   }
 
@@ -104,6 +113,7 @@ async function create({
   }
 
   if (classId) {
+    assertUuid(classId, 400, '유효하지 않은 반입니다.')
     const studentClass = await db.Class.findOne({ where: { id: classId, academyId } })
     if (!studentClass) {
       throwError(400, '유효하지 않은 반입니다.')
@@ -129,6 +139,8 @@ async function getById({ academyId, studentId }) {
   if (!academy) {
     throwError(401, '유효하지 않은 토큰입니다.')
   }
+
+  assertUuid(studentId, 404, '학생을 찾을 수 없습니다.')
 
   const student = await db.Student.findOne({
     where: { id: studentId, academyId },
@@ -158,15 +170,17 @@ async function update({
     throwError(401, '유효하지 않은 토큰입니다.')
   }
 
-  const resolvedStatus = status || '재원'
-  if (!VALID_STATUSES.includes(resolvedStatus)) {
-    throwError(400, 'status 값이 올바르지 않습니다.')
-  }
+  assertUuid(studentId, 404, '학생을 찾을 수 없습니다.')
 
-  const requiredFields = { name, school, grade, parentPhone }
+  const requiredFields = { name, status, school, grade, parentPhone }
+
   const missingField = Object.entries(requiredFields).find(([, value]) => !value)
   if (missingField) {
     throwError(400, `${missingField[0]}은(는) 필수입니다.`)
+  }
+
+  if (!VALID_STATUSES.includes(status)) {
+    throwError(400, 'status 값이 올바르지 않습니다.')
   }
 
   const student = await db.Student.findOne({ where: { id: studentId, academyId } })
@@ -175,6 +189,7 @@ async function update({
   }
 
   if (classId) {
+    assertUuid(classId, 400, '유효하지 않은 반입니다.')
     const studentClass = await db.Class.findOne({ where: { id: classId, academyId } })
     if (!studentClass) {
       throwError(400, '유효하지 않은 반입니다.')
@@ -184,7 +199,7 @@ async function update({
   await student.update({
     name,
     classId: classId || null,
-    status: resolvedStatus,
+    status,
     school,
     grade,
     parentPhone,
@@ -205,6 +220,8 @@ async function remove({ academyId, studentId }) {
     throwError(401, '유효하지 않은 토큰입니다.')
   }
 
+  assertUuid(studentId, 404, '학생을 찾을 수 없습니다.')
+
   const student = await db.Student.findOne({ where: { id: studentId, academyId } })
   if (!student) {
     throwError(404, '학생을 찾을 수 없습니다.')
@@ -218,6 +235,8 @@ async function remove({ academyId, studentId }) {
 
 // 학생 상세 성적탭 — 시험 목록 조회 : GET /students/{studentId}/exam-results
 async function getExamResults({ academyId, studentId, limit, offset }) {
+  assertUuid(studentId, 404, '학생을 찾을 수 없습니다.')
+
   const student = await db.Student.findOne({ where: { id: studentId, academyId } })
   if (!student) {
     throwError(404, '학생을 찾을 수 없습니다.')
@@ -262,6 +281,9 @@ async function getExamResultDetail({ academyId, studentId, examId }) {
   if (!academy) {
     throwError(401, '유효하지 않은 토큰입니다.')
   }
+
+  assertUuid(studentId, 404, '학생을 찾을 수 없습니다.')
+  assertUuid(examId, 404, '응시 기록을 찾을 수 없습니다.')
 
   const student = await db.Student.findOne({ where: { id: studentId, academyId } })
   if (!student) {

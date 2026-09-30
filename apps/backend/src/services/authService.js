@@ -13,7 +13,11 @@ async function login(email, password) {
     throwError(400, '이메일과 비밀번호는 필수입니다.')
   }
 
-  const user = await db.User.findOne({ where: { email } })
+  // 재가입으로 같은 이메일이 여러 개일 수 있어 삭제되지 않은 계정을 우선 조회
+  const user = await db.User.findOne({
+    where: { email },
+    order: [['deleted_at', 'ASC NULLS FIRST']],
+  })
   if (!user) {
     throwError(401, '이메일 또는 비밀번호가 올바르지 않습니다.')
   }
@@ -23,14 +27,28 @@ async function login(email, password) {
     throwError(401, '이메일 또는 비밀번호가 올바르지 않습니다.')
   }
 
-  const academy = await db.Academy.findOne({ where: { id: user.academyId, deletedAt: null } })
-  if (!academy) {
-    throwError(401, '이메일 또는 비밀번호가 올바르지 않습니다.')
+  const academy = await db.Academy.findOne({ where: { id: user.academyId } })
+  if (!academy || academy.deletedAt || user.deleted_at) {
+    throwError(403, '삭제된 학원 계정입니다.')
   }
 
   const token = issueAcademyToken({ userId: user.id, academyId: academy.id, email: user.email })
 
   return { user, token, academy }
+}
+
+async function getMe(userId, academyId) {
+  const user = await db.User.findOne({ where: { id: userId, academyId } })
+  if (!user) {
+    throwError(401, '유효하지 않은 토큰입니다.')
+  }
+
+  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
+  if (!academy) {
+    throwError(401, '유효하지 않은 토큰입니다.')
+  }
+
+  return { user, academy }
 }
 
 async function changePassword(userId, academyId, currentPassword, newPassword, newPasswordConfirm) {
@@ -56,4 +74,4 @@ async function changePassword(userId, academyId, currentPassword, newPassword, n
   await user.update({ passwordHash })
 }
 
-module.exports = { login, changePassword }
+module.exports = { login, changePassword, getMe }

@@ -23,6 +23,10 @@ function authenticateAdmin(req, res, next) {
     throwError(401, '유효하지 않은 토큰입니다.');
   }
 
+  if (!decoded.adminId) {
+    throwError(403, '운영자 권한이 없습니다.');
+  }
+
   req.admin = decoded;
   next();
 }
