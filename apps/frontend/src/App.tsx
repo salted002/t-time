@@ -27,16 +27,6 @@ function App() {
             <Route path="academies" element={<div>학원 목록 (임시)</div>} />
           </Route>
 
-          {/* 학생 목록은 자체 레이아웃을 쓰므로 AppLayout 밖에 둔다 */}
-          <Route
-            path="/:slug/students"
-            element={
-              <ProtectedRoute>
-                <StudentListPage />
-              </ProtectedRoute>
-            }
-          />
-
           {/* 학원 관리자 영역: 로그인·slug 검증을 레이아웃 한 곳에서 처리 */}
           <Route
             path="/:slug"
@@ -47,6 +37,7 @@ function App() {
             }
           >
             <Route index element={<Navigate to="students" replace />} />
+            <Route path="students" element={<StudentListPage />} />
             <Route path="exams" element={<div>시험 관리 (임시)</div>} />
           </Route>
 
