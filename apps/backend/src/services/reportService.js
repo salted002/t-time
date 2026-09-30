@@ -13,6 +13,7 @@ function throwError(statusCode, message) {
   error.statusCode = statusCode
   throw error
 }
+
 // 리포트 미리보기 — 단일 흐름: 이 시험 하나를 기준으로 리포트 미리보기 생성
 async function previewSingle({ academy, student, examId, subscribed }) {
   const targetParticipant = await db.ExamParticipant.findOne({
@@ -106,9 +107,14 @@ async function previewSingle({ academy, student, examId, subscribed }) {
     const subject = exam.ExamSubjects.find((s) => s.name === subjectName)
     const myScore = myScoresBySubject.get(subject.id)
     const stats = subjectStatsThisExam.get(subject.id)
+    const myRank = stats
+      ? stats.ranks.find((rank) => rank.participantId === targetParticipant.id)
+      : null
+
     shared.subjectStats[subjectName].personalVsExamAverage = {
       score: myScore ? myScore.score : null,
       examAverage: stats ? stats.average : null,
+      subjectRank: myRank ? myRank.rank : null,
     }
   })
 
@@ -269,13 +275,18 @@ async function buildTrendAndFeedback({ academy, student, subjectNames, subscribe
   }
 }
 
-async function buildSubjectStatsSnapshot({ studentId, examId, examIds, subjectNames }) {
+// examIds 기준 subjectStats 스냅샷 계산 (저장 시점에 딱 한 번 호출)
+async function buildSubjectStatsSnapshot({ academy, student, examId, examIds, subjectNames }) {
   const trendBySubjectName = await examStatsService.getTrendByExamIds({
-    studentId,
+    studentId: student.id,
     examIds,
     subjectNames,
   })
   const classAveragesByExam = await examStatsService.getClassAveragesBySubjectName({ examIds })
+
+  const subjectRankByName = examId
+    ? await computeSubjectRanksForExam({ academyId: academy.id, studentId: student.id, examId })
+    : new Map()
 
   const subjectStats = {}
   subjectNames.forEach((subjectName) => {
@@ -292,6 +303,7 @@ async function buildSubjectStatsSnapshot({ studentId, examId, examIds, subjectNa
       personalVsExamAverage = {
         score: targetEntry ? targetEntry.score : null,
         examAverage: classAveragesByExam.get(examId)?.get(subjectName) ?? null,
+        subjectRank: subjectRankByName.get(subjectName) ?? null,
       }
     }
 
@@ -303,6 +315,42 @@ async function buildSubjectStatsSnapshot({ studentId, examId, examIds, subjectNa
   })
 
   return subjectStats
+}
+
+// 특정 시험에서 이 학생의 "과목별 석차"만 계산한다. (create 시점에 examId가 있을 때만 호출)
+async function computeSubjectRanksForExam({ academyId, studentId, examId }) {
+  const targetParticipant = await db.ExamParticipant.findOne({
+    where: { studentId, examId },
+    include: [{ model: db.Exam, where: { academyId }, include: [{ model: db.ExamSubject }] }],
+  })
+  if (!targetParticipant) return new Map()
+
+  const exam = targetParticipant.Exam
+
+  const allParticipants = await db.ExamParticipant.findAll({
+    where: { examId },
+    include: [{ model: db.ExamScore }],
+  })
+  const withScoresBySubject = allParticipants.map((participant) => ({
+    participantId: participant.id,
+    scoresBySubject: new Map(participant.ExamScores.map((score) => [score.subjectId, score])),
+  }))
+
+  const subjectStatsThisExam = examStatsService.computeSubjectStats({
+    examSubjects: exam.ExamSubjects,
+    participants: withScoresBySubject,
+  })
+
+  const rankBySubjectName = new Map()
+  exam.ExamSubjects.forEach((subject) => {
+    const stats = subjectStatsThisExam.get(subject.id)
+    const myRank = stats
+      ? stats.ranks.find((rank) => rank.participantId === targetParticipant.id)
+      : null
+    rankBySubjectName.set(subject.name, myRank ? myRank.rank : null)
+  })
+
+  return rankBySubjectName
 }
 
 // 리포트 생성
@@ -345,9 +393,20 @@ async function create({
     throwError(400, '유효하지 않은 examId가 포함되어 있습니다.')
   }
 
+  // 추가: examId가 있으면 examIds 안에 포함된 값이어야 함
+  if (examId && !examIds.includes(examId)) {
+    throwError(400, 'examId는 examIds에 포함되어 있어야 합니다.')
+  }
+
   const subscribed = academy.subscriptionStatus === 'SUBSCRIBED'
 
-  const subjectStats = await buildSubjectStatsSnapshot({ studentId, examId, examIds, subjectNames })
+  const subjectStats = await buildSubjectStatsSnapshot({
+    academy,
+    student,
+    examId,
+    examIds,
+    subjectNames,
+  })
 
   const report = await db.Report.create({
     academyId,
