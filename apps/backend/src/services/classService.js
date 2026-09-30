@@ -63,6 +63,17 @@ async function assertStudentsInAcademy(academyId, studentIds) {
   }
 }
 
+async function findClass(academyId, classId) {
+  if (!UUID_PATTERN.test(classId)) {
+    throwError(404, '반을 찾을 수 없습니다.');
+  }
+  const targetClass = await db.Class.findOne({ where: { id: classId, academyId } });
+  if (!targetClass) {
+    throwError(404, '반을 찾을 수 없습니다.');
+  }
+  return targetClass;
+}
+
 function toResponse(classRow, studentCount) {
   return {
     id: classRow.id,
@@ -85,6 +96,27 @@ async function list({ academyId }) {
   });
 
   return rows.map((row) => toResponse(row, Number(row.get('studentCount'))));
+}
+
+// 반 상세 조회 (소속 학생 전체, 이름 오름차순 — 휴원·퇴원 포함)
+async function getById({ academyId, classId }) {
+  await assertAcademy(academyId);
+
+  const targetClass = await findClass(academyId, classId);
+
+  const students = await db.Student.findAll({
+    where: { classId, academyId },
+    attributes: ['id', 'name', 'status'],
+    order: [
+      ['name', 'ASC'],
+      ['id', 'ASC'],
+    ],
+  });
+
+  return {
+    ...toResponse(targetClass, students.length),
+    students: students.map((student) => ({ id: student.id, name: student.name, status: student.status })),
+  };
 }
 
 // 반 생성 + 학생 배정 (다른 반 소속 학생은 새 반으로 이동)
@@ -125,14 +157,7 @@ async function update({ academyId, classId, name, teacherName, studentIds }) {
     throwError(400, '수정할 값이 없습니다.');
   }
 
-  if (!UUID_PATTERN.test(classId)) {
-    throwError(404, '반을 찾을 수 없습니다.');
-  }
-
-  const targetClass = await db.Class.findOne({ where: { id: classId, academyId } });
-  if (!targetClass) {
-    throwError(404, '반을 찾을 수 없습니다.');
-  }
+  const targetClass = await findClass(academyId, classId);
 
   const changes = {};
   if (name !== undefined) {
@@ -175,4 +200,16 @@ async function update({ academyId, classId, name, teacherName, studentIds }) {
   return toResponse(targetClass, studentCount);
 }
 
-module.exports = { list, create, update };
+// 반 삭제 (DB 외래키 ON DELETE SET NULL로 students/exams.class_id만 NULL, 기록은 유지)
+async function remove({ academyId, classId }) {
+  await assertAcademy(academyId);
+
+  const targetClass = await findClass(academyId, classId);
+
+  const deleted = { id: targetClass.id, name: targetClass.name };
+  await targetClass.destroy();
+
+  return deleted;
+}
+
+module.exports = { list, create, getById, update, remove };
