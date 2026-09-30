@@ -1,117 +1,18 @@
+const { Op } = require('sequelize')
 const db = require('../db/models')
+const crypto = require('crypto')
 const examStatsService = require('./examStatsService')
 const aiFeedbackService = require('./aiFeedbackService')
 
 const RECENT_TREND_LIMIT = 10 // 리포트는 학생 성적탭(6회)과 다르게 "최근 10회" 기준
+const SHARE_LINK_TTL_MS = 14 * 24 * 60 * 60 * 1000 // 2주
+const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL
 
 function throwError(statusCode, message) {
   const error = new Error(message)
   error.statusCode = statusCode
   throw error
 }
-
-async function preview({ academyId, studentId, examId, subjectNames }) {
-  const hasExamId = Boolean(examId)
-  const hasSubjectNames = Array.isArray(subjectNames) && subjectNames.length > 0
-
-  if (hasExamId === hasSubjectNames) {
-    throwError(400, 'examId와 subjectNames 중 정확히 하나를 보내야 합니다.')
-  }
-
-  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
-  if (!academy) {
-    throwError(401, '유효하지 않은 토큰입니다.')
-  }
-
-  const student = await db.Student.findOne({
-    where: { id: studentId, academyId },
-    include: [{ model: db.Class, attributes: ['id', 'name'], required: false }],
-  })
-  if (!student) {
-    throwError(404, '학생을 찾을 수 없습니다.')
-  }
-
-  const subscribed = academy.subscriptionStatus === 'SUBSCRIBED'
-
-  if (hasExamId) {
-    return previewSingle({ academy, student, examId, subscribed })
-  }
-
-  return previewBulk({ academy, student, subjectNames, subscribed })
-}
-
-/**
- * 단일·일괄 흐름이 공통으로 쓰는 부분
- * [ 추이(recent10) + 반평균 추이 + AI 피드백 + 링크 만료 예정일 ]
- *
- * subjectStats는 여기서 "틀"만 만들고 (personalVsExamAverage는 항상 null),
- * 단일 흐름 쪽에서 자기 값으로 덮어쓴다. (일괄 흐름은 애초에 null이 맞는 값이라 덮어쓸 필요 없음)
- */
-async function buildTrendAndFeedback({ academy, student, subjectNames, subscribed }) {
-  const trendBySubjectName = await examStatsService.getRecentTrendByStudent({
-    academyId: academy.id,
-    studentId: student.id,
-    subjectNames,
-    limit: RECENT_TREND_LIMIT,
-  })
-
-  const recentExamIds = [
-    ...new Set(
-      [...trendBySubjectName.values()].flatMap((history) => history.map((entry) => entry.examId)),
-    ),
-  ]
-
-  const classAveragesByExam = await examStatsService.getClassAveragesBySubjectName({
-    examIds: recentExamIds,
-  })
-
-  const subjectStats = {}
-  subjectNames.forEach((subjectName) => {
-    const personalHistory = trendBySubjectName.get(subjectName) || []
-    const classAverageHistory = personalHistory.map((entry) => ({
-      examId: entry.examId,
-      examDate: entry.examDate,
-      average: classAveragesByExam.get(entry.examId)?.get(subjectName) ?? null,
-    }))
-
-    subjectStats[subjectName] = {
-      personalVsExamAverage: null,
-      recent10: personalHistory,
-      classAverageRecent10: classAverageHistory,
-    }
-  })
-
-  let aiSubjectFeedback = null
-  let aiOverallFeedback = null
-
-  if (subscribed) {
-    const feedbackEntries = await Promise.all(
-      subjectNames.map(async (subjectName) => [
-        subjectName,
-        await aiFeedbackService.generateSubjectFeedback({
-          subjectName,
-          trendHistory: trendBySubjectName.get(subjectName) || [],
-        }),
-      ]),
-    )
-    aiSubjectFeedback = Object.fromEntries(feedbackEntries)
-    aiOverallFeedback = await aiFeedbackService.generateOverallFeedback({
-      studentName: student.name,
-      subjectFeedbacks: aiSubjectFeedback,
-    })
-  }
-
-  const linkExpiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 2주 뒤
-
-  return {
-    subjectStats,
-    examIds: recentExamIds,
-    aiSubjectFeedback,
-    aiOverallFeedback,
-    linkExpiresAt,
-  }
-}
-
 // 리포트 미리보기 — 단일 흐름: 이 시험 하나를 기준으로 리포트 미리보기 생성
 async function previewSingle({ academy, student, examId, subscribed }) {
   const targetParticipant = await db.ExamParticipant.findOne({
@@ -265,9 +166,150 @@ async function previewBulk({ academy, student, subjectNames, subscribed }) {
   }
 }
 
+// 리포트 미리보기
+async function preview({ academyId, studentId, examId, subjectNames }) {
+  const hasExamId = Boolean(examId)
+  const hasSubjectNames = Array.isArray(subjectNames) && subjectNames.length > 0
+
+  if (hasExamId === hasSubjectNames) {
+    throwError(400, 'examId와 subjectNames 중 정확히 하나를 보내야 합니다.')
+  }
+
+  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
+  if (!academy) {
+    throwError(401, '유효하지 않은 토큰입니다.')
+  }
+
+  const student = await db.Student.findOne({
+    where: { id: studentId, academyId },
+    include: [{ model: db.Class, attributes: ['id', 'name'], required: false }],
+  })
+  if (!student) {
+    throwError(404, '학생을 찾을 수 없습니다.')
+  }
+
+  const subscribed = academy.subscriptionStatus === 'SUBSCRIBED'
+
+  if (hasExamId) {
+    return previewSingle({ academy, student, examId, subscribed })
+  }
+
+  return previewBulk({ academy, student, subjectNames, subscribed })
+}
+
+/**
+ * 단일·일괄 흐름이 공통으로 쓰는 부분
+ * [ 추이(recent10) + 반평균 추이 + AI 피드백 + 링크 만료 예정일 ]
+ *
+ * subjectStats는 여기서 "틀"만 만들고 (personalVsExamAverage는 항상 null),
+ * 단일 흐름 쪽에서 자기 값으로 덮어쓴다. (일괄 흐름은 애초에 null이 맞는 값이라 덮어쓸 필요 없음)
+ */
+async function buildTrendAndFeedback({ academy, student, subjectNames, subscribed }) {
+  const trendBySubjectName = await examStatsService.getRecentTrendByStudent({
+    academyId: academy.id,
+    studentId: student.id,
+    subjectNames,
+    limit: RECENT_TREND_LIMIT,
+  })
+
+  const recentExamIds = [
+    ...new Set(
+      [...trendBySubjectName.values()].flatMap((history) => history.map((entry) => entry.examId)),
+    ),
+  ]
+
+  const classAveragesByExam = await examStatsService.getClassAveragesBySubjectName({
+    examIds: recentExamIds,
+  })
+
+  const subjectStats = {}
+  subjectNames.forEach((subjectName) => {
+    const personalHistory = trendBySubjectName.get(subjectName) || []
+    const classAverageHistory = personalHistory.map((entry) => ({
+      examId: entry.examId,
+      examDate: entry.examDate,
+      average: classAveragesByExam.get(entry.examId)?.get(subjectName) ?? null,
+    }))
+
+    subjectStats[subjectName] = {
+      personalVsExamAverage: null,
+      recent10: personalHistory,
+      classAverageRecent10: classAverageHistory,
+    }
+  })
+
+  let aiSubjectFeedback = null
+  let aiOverallFeedback = null
+
+  if (subscribed) {
+    const feedbackEntries = await Promise.all(
+      subjectNames.map(async (subjectName) => [
+        subjectName,
+        await aiFeedbackService.generateSubjectFeedback({
+          subjectName,
+          trendHistory: trendBySubjectName.get(subjectName) || [],
+        }),
+      ]),
+    )
+    aiSubjectFeedback = Object.fromEntries(feedbackEntries)
+    aiOverallFeedback = await aiFeedbackService.generateOverallFeedback({
+      studentName: student.name,
+      subjectFeedbacks: aiSubjectFeedback,
+    })
+  }
+
+  const linkExpiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 2주 뒤
+
+  return {
+    subjectStats,
+    examIds: recentExamIds,
+    aiSubjectFeedback,
+    aiOverallFeedback,
+    linkExpiresAt,
+  }
+}
+
+async function buildSubjectStatsSnapshot({ studentId, examId, examIds, subjectNames }) {
+  const trendBySubjectName = await examStatsService.getTrendByExamIds({
+    studentId,
+    examIds,
+    subjectNames,
+  })
+  const classAveragesByExam = await examStatsService.getClassAveragesBySubjectName({ examIds })
+
+  const subjectStats = {}
+  subjectNames.forEach((subjectName) => {
+    const personalHistory = trendBySubjectName.get(subjectName) || []
+    const classAverageHistory = personalHistory.map((entry) => ({
+      examId: entry.examId,
+      examDate: entry.examDate,
+      average: classAveragesByExam.get(entry.examId)?.get(subjectName) ?? null,
+    }))
+
+    let personalVsExamAverage = null
+    if (examId) {
+      const targetEntry = personalHistory.find((entry) => entry.examId === examId)
+      personalVsExamAverage = {
+        score: targetEntry ? targetEntry.score : null,
+        examAverage: classAveragesByExam.get(examId)?.get(subjectName) ?? null,
+      }
+    }
+
+    subjectStats[subjectName] = {
+      personalVsExamAverage,
+      recent10: personalHistory,
+      classAverageRecent10: classAverageHistory,
+    }
+  })
+
+  return subjectStats
+}
+
+// 리포트 생성
 async function create({
   academyId,
   studentId,
+  examId, // 단일 흐름이면 값 있고, 일괄 흐름이면 undefined
   examIds,
   subjectNames,
   teacherFeedback,
@@ -305,11 +347,14 @@ async function create({
 
   const subscribed = academy.subscriptionStatus === 'SUBSCRIBED'
 
+  const subjectStats = await buildSubjectStatsSnapshot({ studentId, examId, examIds, subjectNames })
+
   const report = await db.Report.create({
     academyId,
     studentId,
     examIds,
     subjectNames,
+    subjectStats,
     teacherFeedback: teacherFeedback ?? null,
     aiFeedback: subscribed ? (aiFeedback ?? null) : null,
   })
@@ -322,15 +367,118 @@ async function create({
   }
 }
 
-const crypto = require('crypto')
+// 리포트 목록 조회
+async function list({ academyId, page, size, q }) {
+  const pageNum = Number(page) > 0 ? Number(page) : 1
+  const sizeNum = Number(size) > 0 ? Number(size) : 10
 
-const SHARE_LINK_TTL_MS = 14 * 24 * 60 * 60 * 1000 // 2주
-const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL
+  const { count, rows } = await db.Report.findAndCountAll({
+    where: { academyId },
+    include: [
+      {
+        model: db.Student,
+        attributes: ['id', 'name'],
+        required: true,
+        where: q ? { name: { [Op.iLike]: `%${q}%` } } : undefined,
+      },
+    ],
+    order: [['createdAt', 'DESC']],
+    limit: sizeNum,
+    offset: (pageNum - 1) * sizeNum,
+    distinct: true,
+  })
 
+  const reportIds = rows.map((report) => report.id)
+  const shareLinks = await db.ReportShareLink.findAll({
+    where: { reportId: reportIds },
+    order: [['createdAt', 'DESC']],
+  })
+
+  const latestLinkByReport = new Map()
+  shareLinks.forEach((link) => {
+    if (!latestLinkByReport.has(link.reportId)) {
+      latestLinkByReport.set(link.reportId, link)
+    }
+  })
+
+  const now = new Date()
+  const reports = rows.map((report) => {
+    const latest = latestLinkByReport.get(report.id)
+    let shareLinkStatus = '없음'
+    if (latest) {
+      shareLinkStatus = latest.expiresAt > now ? '유효' : '만료됨'
+    }
+
+    return {
+      id: report.id,
+      studentId: report.studentId,
+      studentName: report.Student.name,
+      subjectCount: report.subjectNames.length,
+      createdAt: report.createdAt,
+      shareLinkStatus,
+      shareLinkExpiresAt: latest ? latest.expiresAt : null,
+    }
+  })
+
+  return { reports, count, page: pageNum, size: sizeNum }
+}
+
+// 리포트 상세 조회 — 저장 시점 스냅샷을 그대로 반환 (재계산 없음)
+async function getById({ academyId, reportId }) {
+  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
+  if (!academy) {
+    throwError(401, '유효하지 않은 토큰입니다.')
+  }
+
+  const report = await db.Report.findOne({
+    where: { id: reportId, academyId },
+    include: [
+      {
+        model: db.Student,
+        attributes: ['id', 'name'],
+        include: [{ model: db.Class, attributes: ['id', 'name'], required: false }],
+      },
+    ],
+  })
+  if (!report) {
+    throwError(404, '리포트를 찾을 수 없습니다.')
+  }
+
+  const subscribed = academy.subscriptionStatus === 'SUBSCRIBED'
+
+  const latestLink = await db.ReportShareLink.findOne({
+    where: { reportId: report.id },
+    order: [['createdAt', 'DESC']],
+  })
+
+  return {
+    id: report.id,
+    studentId: report.studentId,
+    studentName: report.Student.name,
+    className: report.Student.Class ? report.Student.Class.name : null,
+    subjectNames: report.subjectNames,
+    examIds: report.examIds,
+    subjectStats: report.subjectStats,
+    teacherFeedback: report.teacherFeedback,
+    aiFeedback: subscribed ? report.aiFeedback : null,
+    subscribed,
+    shareLink: latestLink
+      ? {
+          url: buildShareUrl(latestLink.token),
+          expiresAt: latestLink.expiresAt,
+          expired: latestLink.expiresAt <= new Date(),
+        }
+      : null,
+    createdAt: report.createdAt,
+  }
+}
+
+// 리포트 공유 링크 URL 조립
 function buildShareUrl(token) {
   return `${FRONTEND_BASE_URL}/share/${token}`
 }
 
+// 리포트 공유 링크 생성: 만료 안 된 기존 링크가 있으면 재사용, 없으면 새로 발급
 async function createShareLink({ academyId, reportId }) {
   const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
   if (!academy) {
@@ -378,4 +526,28 @@ async function createShareLink({ academyId, reportId }) {
   }
 }
 
-module.exports = { preview, create, createShareLink }
+// 리포트 상세 — 선생님 피드백 수정 (유일하게 수정 가능한 필드)
+async function update({ academyId, reportId, teacherFeedback }) {
+  if (teacherFeedback === undefined) {
+    throwError(400, 'teacherFeedback은 필수입니다.')
+  }
+
+  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
+  if (!academy) {
+    throwError(401, '유효하지 않은 토큰입니다.')
+  }
+
+  const report = await db.Report.findOne({ where: { id: reportId, academyId } })
+  if (!report) {
+    throwError(404, '리포트를 찾을 수 없습니다.')
+  }
+
+  await report.update({ teacherFeedback })
+
+  return {
+    id: report.id,
+    teacherFeedback: report.teacherFeedback,
+  }
+}
+
+module.exports = { preview, create, list, getById, createShareLink, update }

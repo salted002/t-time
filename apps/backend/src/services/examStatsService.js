@@ -177,6 +177,48 @@ async function getRecentTrendByStudent({ academyId, studentId, subjectNames, lim
 }
 
 /**
+ * 저장된 examIds 기준으로 과목별 개인 점수 동향을 계산한다.
+ * (리포트 저장 시점 스냅샷용 — "최근 N회"가 아니라 "이 시험들만")
+ * 반환값: Map<subjectName, [{ examId, examDate, score }]>  (오래된 → 최신 순)
+ */
+async function getTrendByExamIds({ studentId, examIds, subjectNames }) {
+  if (examIds.length === 0) return new Map()
+
+  const participants = await db.ExamParticipant.findAll({
+    where: { studentId, examId: examIds },
+    include: [
+      { model: db.Exam, include: [{ model: db.ExamSubject, separate: true }] },
+      { model: db.ExamScore, separate: true },
+    ],
+    order: [
+      [db.Exam, 'examDate', 'ASC'],
+      [db.Exam, 'createdAt', 'ASC'],
+    ],
+  })
+
+  const trendBySubjectName = new Map()
+  subjectNames.forEach((subjectName) => {
+    const history = participants
+      .map((participant) => {
+        const matchedSubject = participant.Exam.ExamSubjects.find((s) => s.name === subjectName)
+        if (!matchedSubject) return null
+
+        const score = participant.ExamScores.find((s) => s.subjectId === matchedSubject.id)
+        return {
+          examId: participant.Exam.id,
+          examDate: participant.Exam.examDate,
+          score: score ? score.score : null,
+        }
+      })
+      .filter(Boolean)
+
+    trendBySubjectName.set(subjectName, history)
+  })
+
+  return trendBySubjectName
+}
+
+/**
  * 여러 시험(examIds)의 "과목명별 반평균"을 한 번에 계산한다.
  * 리포트의 "같은 반 평균 대비 10회 추이"처럼, 과거 여러 시험 각각의 반평균이 필요할 때 쓴다.
  * 반환값: Map<examId, Map<subjectName, average>>
@@ -187,7 +229,6 @@ async function getClassAveragesBySubjectName({ examIds }) {
   const participants = await db.ExamParticipant.findAll({
     where: { examId: examIds },
     include: [
-      { model: db.Student, attributes: ['id', 'status'], required: false },
       { model: db.ExamScore },
       { model: db.Exam, attributes: ['id'], include: [{ model: db.ExamSubject }] },
     ],
@@ -306,6 +347,7 @@ module.exports = {
   computeSubjectStats,
   computeGradeDistribution,
   getRecentTrendByStudent,
+  getTrendByExamIds,
   getClassAveragesBySubjectName,
   getClassAverageTrend,
   getRecentExamSubjectNames,
