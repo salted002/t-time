@@ -1,3 +1,4 @@
+const { Op } = require('sequelize')
 const db = require('../db/models')
 
 /**
@@ -28,10 +29,17 @@ function assignRanks(items, getValue) {
 function computeTotal({ isGradeExam, examSubjects, scoresBySubject }) {
   if (isGradeExam) return null
 
-  return examSubjects.reduce((sum, subject) => {
+  let sum = 0
+  let hasScore = false
+  examSubjects.forEach((subject) => {
     const score = scoresBySubject.get(subject.id)
-    return score && score.score !== null ? sum + Number(score.score) : sum
-  }, 0)
+    if (score && score.score !== null) {
+      sum += Number(score.score)
+      hasScore = true
+    }
+  })
+
+  return hasScore ? sum : null // 하나도 입력 안 했으면 0이 아니라 null
 }
 
 /**
@@ -51,10 +59,14 @@ function computeTotals({ isGradeExam, examSubjects, participants }) {
     return { ranked: withTotals, classAverageTotal: null }
   }
 
-  const ranked = assignRanks(withTotals, (p) => p.total)
+  const entered = withTotals.filter((p) => p.total !== null)
+  const notEntered = withTotals.filter((p) => p.total === null)
 
-  const classAverageTotal = ranked.length
-    ? Number((ranked.reduce((sum, p) => sum + (p.total || 0), 0) / ranked.length).toFixed(1))
+  const rankedEntered = assignRanks(entered, (p) => p.total)
+  const ranked = [...rankedEntered, ...notEntered.map((p) => ({ ...p, rank: null }))]
+
+  const classAverageTotal = entered.length
+    ? Number((entered.reduce((sum, p) => sum + p.total, 0) / entered.length).toFixed(1))
     : null
 
   return { ranked, classAverageTotal }
@@ -91,6 +103,31 @@ function computeSubjectStats({ examSubjects, participants }) {
 }
 
 /**
+ * 등급형: 과목별 등급 인원 분포 계산 (인원이 0인 등급도 포함)
+ */
+function computeGradeDistribution({ examSubjects, examGrades, participants }) {
+  const grades = [...examGrades].sort((a, b) => a.order - b.order)
+
+  return examSubjects.map((subject) => {
+    const countByGrade = new Map(grades.map((g) => [g.id, 0]))
+    participants.forEach((p) => {
+      const score = p.scoresBySubject.get(subject.id)
+      if (score && score.gradeId && countByGrade.has(score.gradeId)) {
+        countByGrade.set(score.gradeId, countByGrade.get(score.gradeId) + 1)
+      }
+    })
+    return {
+      subjectId: subject.id,
+      distribution: grades.map((g) => ({
+        gradeId: g.id,
+        label: g.label,
+        count: countByGrade.get(g.id),
+      })),
+    }
+  })
+}
+
+/**
  * 학생 한 명의 "최근 N회 시험" 점수 동향을 과목명 기준으로 가져온다.
  * subjectId는 시험마다 새로 생성되므로, 같은 과목인지는 "이름"으로 판단한다.
  * subjectNames: 동향을 보고 싶은 과목명 배열 (예: ['문법', 'Reading'])
@@ -100,12 +137,18 @@ async function getRecentTrendByStudent({ academyId, studentId, subjectNames, lim
   const recentParticipants = await db.ExamParticipant.findAll({
     where: { studentId },
     include: [
-      { model: db.Exam, where: { academyId }, include: [{ model: db.ExamSubject }] },
+      {
+        model: db.Exam,
+        where: { academyId },
+        include: [{ model: db.ExamSubject, separate: true }],
+      },
       { model: db.ExamScore, separate: true },
     ],
-    order: [[db.Exam, 'examDate', 'DESC']],
+    order: [
+      [db.Exam, 'examDate', 'DESC'],
+      [db.Exam, 'createdAt', 'DESC'],
+    ],
     limit,
-    subQuery: false,
   })
 
   const chronological = [...recentParticipants].reverse()
@@ -152,7 +195,6 @@ async function getClassAveragesBySubjectName({ examIds }) {
 
   const participantsByExam = new Map(examIds.map((id) => [id, []]))
   participants.forEach((participant) => {
-    if (participant.Student && participant.Student.status !== '재원') return
     participantsByExam.get(participant.examId).push(participant)
   })
 
@@ -187,6 +229,47 @@ async function getClassAveragesBySubjectName({ examIds }) {
 }
 
 /**
+ * 같은 반의 최근 N회 시험 반평균 동향.
+ * 반환값: Map<과목명, [{ examId, examDate, classAverage}]> (오래된 → 최신)
+ */
+async function getClassAverageTrend({ academyId, classId, examDate, limit }) {
+  if (!classId) return new Map()
+
+  const recentExams = await db.Exam.findAll({
+    where: {
+      academyId,
+      classId,
+      evalType: { [Op.ne]: 'grade' },
+      examDate: { [Op.lte]: examDate },
+    },
+    order: [
+      ['examDate', 'DESC'],
+      ['createdAt', 'DESC'],
+    ],
+    limit, // include가 없어서 limit이 정확히 걸림
+  })
+
+  const chronological = [...recentExams].reverse()
+  const averagesByExam = await getClassAveragesBySubjectName({
+    examIds: chronological.map((e) => e.id),
+  })
+
+  const trendBySubjectName = new Map()
+  chronological.forEach((exam) => {
+    const averages = averagesByExam.get(exam.id) || new Map()
+    averages.forEach((average, subjectName) => {
+      if (!trendBySubjectName.has(subjectName)) trendBySubjectName.set(subjectName, [])
+      trendBySubjectName.get(subjectName).push({
+        examId: exam.id,
+        examDate: exam.examDate,
+        classAverage: average,
+      })
+    })
+  })
+  return trendBySubjectName
+}
+
+/**
  * 학생이 최근 N회 시험에서 "실제로 응시한 과목명" 전체를 가져온다.
  * 일괄 리포트 흐름에서 "선택한 과목 중 이 학생이 최근 10회 내 응시한 과목만" 걸러낼 때 쓴다.
  * 반환값: Set<subjectName>
@@ -194,10 +277,18 @@ async function getClassAveragesBySubjectName({ examIds }) {
 async function getRecentExamSubjectNames({ academyId, studentId, limit }) {
   const recentParticipants = await db.ExamParticipant.findAll({
     where: { studentId },
-    include: [{ model: db.Exam, where: { academyId }, include: [{ model: db.ExamSubject }] }],
-    order: [[db.Exam, 'examDate', 'DESC']],
+    include: [
+      {
+        model: db.Exam,
+        where: { academyId },
+        include: [{ model: db.ExamSubject, separate: true }],
+      },
+    ],
+    order: [
+      [db.Exam, 'examDate', 'DESC'],
+      [db.Exam, 'createdAt', 'DESC'],
+    ],
     limit,
-    subQuery: false,
   })
 
   const subjectNames = new Set()
@@ -213,7 +304,9 @@ module.exports = {
   computeTotal,
   computeTotals,
   computeSubjectStats,
+  computeGradeDistribution,
   getRecentTrendByStudent,
   getClassAveragesBySubjectName,
+  getClassAverageTrend,
   getRecentExamSubjectNames,
 }

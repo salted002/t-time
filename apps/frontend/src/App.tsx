@@ -1,23 +1,17 @@
-import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/sonner'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { AdminLayout } from '@/components/layout/AdminLayout'
+import { ConfirmProvider } from '@/components/common/ConfirmDialog'
 
-import LandingPage from '@/pages/landing/LandingPage';
-import SignupPage from '@/pages/auth/SignupPage';
-import LoginPage from '@/pages/auth/loginPage';
-import StudentListPage from '@/pages/students/StudentListPage';
-import ProtectedRoute from '@/router/ProtectedRoute';
-
-// slug 불일치로 "/{내 slug}/"로 리다이렉트된 뒤, 실제 화면인 학생 목록으로 이어주는 보조 라우트
-function AcademyRoot() {
-  const { slug } = useParams<{ slug: string }>();
-  return <Navigate to={`/${slug}/students`} replace />;
-}
-import ComponentsPage from './pages/dev/ComponentsPage'
-import { ConfirmProvider } from './components/common/ConfirmDialog'
+import LandingPage from '@/pages/landing/LandingPage'
+import SignupPage from '@/pages/auth/SignupPage'
+import LoginPage from '@/pages/auth/loginPage'
+import StudentListPage from '@/pages/students/StudentListPage'
+import ComponentsPage from '@/pages/dev/ComponentsPage'
+import ProtectedRoute from '@/router/ProtectedRoute'
 
 function App() {
   return (
@@ -27,38 +21,44 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route
-            path="/:slug/students"
-            element={
-          <ProtectedRoute>
-            <StudentListPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/:slug"
-        element={
-              <ProtectedRoute>
-                <AcademyRoot />
-              </ProtectedRoute>
-            }
-          />
-          {/* 레이아웃 확인용 임시 페이지 (localhost:5173/hanbit/exams) */}
+
+          {/* 운영자 페이지 (운영자 인증은 AdminAuthContext 구현 후 보호 예정) */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="academies" element={<div>학원 목록 (임시)</div>} />
           </Route>
-          <Route path="/:slug" element={<AppLayout />}>
+
+          {/* 학생 목록은 자체 레이아웃을 쓰므로 AppLayout 밖에 둔다 */}
+          <Route
+            path="/:slug/students"
+            element={
+              <ProtectedRoute>
+                <StudentListPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 학원 관리자 영역: 로그인·slug 검증을 레이아웃 한 곳에서 처리 */}
+          <Route
+            path="/:slug"
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="students" replace />} />
             <Route path="exams" element={<div>시험 관리 (임시)</div>} />
           </Route>
-          <Route path="/dev/components" element={<ComponentsPage />} />
 
-          <Route path="*" element={<Navigate to="/signup?step=academy" replace />} />
+          {import.meta.env.DEV && <Route path="/dev/components" element={<ComponentsPage />} />}
+
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ConfirmProvider>
 
       <Toaster />
     </TooltipProvider>
-  );
+  )
 }
 
-export default App;
+export default App
