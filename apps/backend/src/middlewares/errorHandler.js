@@ -1,4 +1,5 @@
 const { Sequelize } = require("sequelize");
+const multer = require("multer");
 
 function errorHandler(err, req, res, next) {
   console.error("======error handler========");
@@ -8,6 +9,12 @@ function errorHandler(err, req, res, next) {
     return res
       .status(err.statusCode)
       .json({ success: false, message: err.message });
+  } else if (err instanceof multer.MulterError) {
+    const message =
+      err.code === "LIMIT_FILE_SIZE"
+        ? "파일 크기는 5MB를 넘을 수 없습니다."
+        : "파일 업로드 요청이 올바르지 않습니다.";
+    return res.status(400).json({ success: false, message });
   } else if (err instanceof Sequelize.UniqueConstraintError) {
     return res
       .status(409)

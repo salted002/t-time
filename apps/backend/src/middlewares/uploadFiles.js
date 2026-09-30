@@ -28,7 +28,9 @@ const fileFilter = (req, file, done) => {
   if (allowedMimeTypes.includes(file.mimetype)) {
     done(null, true);
   } else {
-    done(new Error('허용되지 않는 파일 형식입니다.'));
+    const error = new Error('허용되지 않는 파일 형식입니다.');
+    error.statusCode = 400;
+    done(error);
   }
 };
 

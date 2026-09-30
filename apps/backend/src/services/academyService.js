@@ -39,126 +39,151 @@ async function checkAvailability(slug, businessNumber) {
   }
 }
 
+function removeLogoFile(filename) {
+  fs.unlink(path.join(__dirname, '../files', filename), (err) => {
+    if (err) console.error('로고 파일 삭제 실패:', err)
+  })
+}
+
 async function signup(signupData, logoFilename) {
-  const {
-    academyName,
-    businessNumber,
-    ownerName,
-    phone,
-    slug,
-    address,
-    senderNumber,
-    name,
-    email,
-    password,
-    passwordConfirm,
-  } = signupData
+  try {
+    const {
+      academyName,
+      businessNumber,
+      ownerName,
+      phone,
+      slug,
+      address,
+      senderNumber,
+      name,
+      email,
+      password,
+      passwordConfirm,
+    } = signupData
 
-  const requiredFields = {
-    academyName,
-    businessNumber,
-    ownerName,
-    phone,
-    slug,
-    name,
-    email,
-    password,
-    passwordConfirm,
+    const requiredFields = {
+      academyName,
+      businessNumber,
+      ownerName,
+      phone,
+      slug,
+      name,
+      email,
+      password,
+      passwordConfirm,
+    }
+    const missingField = Object.entries(requiredFields).find(([, value]) => !value)
+
+    if (missingField) {
+      throwError(400, `${missingField[0]}은(는) 필수입니다.`) // 객체로 묶어서 누락된 필드 이름까지 에러 메시지에 넣음
+    }
+
+    if (password !== passwordConfirm) {
+      throwError(400, '비밀번호가 일치하지 않습니다.')
+    }
+
+    const [existingSlug, existingBusinessNumber, existingEmail] = await Promise.all([
+      db.Academy.findOne({ where: { slug, deletedAt: null } }),
+      db.Academy.findOne({ where: { businessNumber, deletedAt: null } }),
+      db.User.findOne({ where: { email, deleted_at: null } }),
+    ])
+
+    if (existingSlug) throwError(409, '이미 사용 중인 슬러그입니다.')
+    if (existingBusinessNumber) throwError(409, '이미 사용 중인 사업자번호입니다.')
+    if (existingEmail) throwError(409, '이미 사용 중인 이메일입니다.')
+
+    const passwordHash = await hashPassword(password)
+
+    const result = await db.sequelize.transaction(async (t) => {
+      const academy = await db.Academy.create(
+        {
+          name: academyName,
+          slug,
+          businessNumber,
+          ownerName,
+          phone,
+          address: address || null,
+          smsSenderNumber: senderNumber || null,
+          logoUrl: logoFilename,
+          subscriptionStatus: 'FREE',
+        },
+        { transaction: t },
+      )
+
+      const user = await db.User.create(
+        { academyId: academy.id, name, email, passwordHash },
+        { transaction: t },
+      )
+
+      return { academy, user }
+    })
+
+    const token = issueAcademyToken({
+      userId: result.user.id,
+      academyId: result.academy.id,
+      email: result.user.email,
+    })
+
+    return { academy: result.academy, user: result.user, token }
+  } catch (error) {
+    if (logoFilename) removeLogoFile(logoFilename)
+    throw error
   }
-  const missingField = Object.entries(requiredFields).find(([, value]) => !value)
-
-  if (missingField) {
-    throwError(400, `${missingField[0]}은(는) 필수입니다.`) // 객체로 묶어서 누락된 필드 이름까지 에러 메시지에 넣음
-  }
-
-  if (password !== passwordConfirm) {
-    throwError(400, '비밀번호가 일치하지 않습니다.')
-  }
-
-  const [existingSlug, existingBusinessNumber, existingEmail] = await Promise.all([
-    db.Academy.findOne({ where: { slug, deletedAt: null } }),
-    db.Academy.findOne({ where: { businessNumber, deletedAt: null } }),
-    db.User.findOne({ where: { email } }),
-  ])
-
-  if (existingSlug) throwError(409, '이미 사용 중인 슬러그입니다.')
-  if (existingBusinessNumber) throwError(409, '이미 사용 중인 사업자번호입니다.')
-  if (existingEmail) throwError(409, '이미 사용 중인 이메일입니다.')
-
-  const passwordHash = await hashPassword(password)
-
-  const result = await db.sequelize.transaction(async (t) => {
-    const academy = await db.Academy.create(
-      {
-        name: academyName,
-        slug,
-        businessNumber,
-        ownerName,
-        phone,
-        address: address || null,
-        smsSenderNumber: senderNumber || null,
-        logoUrl: logoFilename,
-        subscriptionStatus: 'FREE',
-      },
-      { transaction: t },
-    )
-
-    const user = await db.User.create(
-      { academyId: academy.id, name, email, passwordHash },
-      { transaction: t },
-    )
-
-    return { academy, user }
-  })
-
-  const token = issueAcademyToken({
-    userId: result.user.id,
-    academyId: result.academy.id,
-    email: result.user.email,
-  })
-
-  return { academy: result.academy, user: result.user, token }
 }
 
 async function updateAcademy(academyId, updateData, file) {
-  const { phone, address, slug, senderNumber } = updateData
+  try {
+    const { phone, address, slug, senderNumber } = updateData
 
-  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
-  if (!academy) throwError(404, '학원을 찾을 수 없습니다.')
+    const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
+    if (!academy) throwError(404, '학원을 찾을 수 없습니다.')
 
-  if (slug && slug !== academy.slug) {
-    const existingSlug = await db.Academy.findOne({ where: { slug, deletedAt: null } })
-    if (existingSlug) throwError(409, '이미 사용 중인 슬러그입니다.')
-  }
-
-  const updateFields = {}
-  if (phone !== undefined) updateFields.phone = phone
-  if (address !== undefined) updateFields.address = address
-  if (slug !== undefined) updateFields.slug = slug
-  if (senderNumber !== undefined) updateFields.smsSenderNumber = senderNumber
-
-  if (file) {
-    const oldLogoFilename = academy.logoUrl
-    updateFields.logoUrl = file.filename
-
-    if (oldLogoFilename) {
-      const oldLogoPath = path.join(__dirname, '../files', oldLogoFilename)
-      fs.unlink(oldLogoPath, (err) => {
-        if (err) console.error('이전 로고 파일 삭제 실패:', err)
-      })
+    if (slug && slug !== academy.slug) {
+      const existingSlug = await db.Academy.findOne({ where: { slug, deletedAt: null } })
+      if (existingSlug) throwError(409, '이미 사용 중인 슬러그입니다.')
     }
+
+    const updateFields = {}
+    if (phone !== undefined) updateFields.phone = phone
+    if (address !== undefined) updateFields.address = address
+    if (slug !== undefined) updateFields.slug = slug
+    if (senderNumber !== undefined) updateFields.smsSenderNumber = senderNumber
+
+    const oldLogoFilename = file ? academy.logoUrl : null
+    if (file) {
+      updateFields.logoUrl = file.filename
+    }
+
+    await academy.update(updateFields)
+
+    if (oldLogoFilename) removeLogoFile(oldLogoFilename)
+
+    return academy
+  } catch (error) {
+    if (file) removeLogoFile(file.filename)
+    throw error
   }
-
-  await academy.update(updateFields)
-
-  return academy
 }
 
 async function deleteAcademy(academyId) {
   const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
   if (!academy) throwError(404, '학원을 찾을 수 없습니다.')
 
-  await academy.update({ deletedAt: new Date() })
+  const deletedAt = new Date()
+  await db.sequelize.transaction(async (t) => {
+    await academy.update({ deletedAt }, { transaction: t })
+    await db.User.update({ deleted_at: deletedAt }, { where: { academyId }, transaction: t })
+  })
 }
 
-module.exports = { checkAvailability, signup, updateAcademy, deleteAcademy }
+async function assertActiveAcademy(academyId) {
+  const academy = await db.Academy.findOne({
+    where: { id: academyId },
+    attributes: ['id', 'deletedAt'],
+  })
+  if (!academy || academy.deletedAt) {
+    throwError(403, '삭제된 학원 계정입니다.')
+  }
+}
+
+module.exports = { checkAvailability, signup, updateAcademy, deleteAcademy, assertActiveAcademy }

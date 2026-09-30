@@ -1,5 +1,9 @@
 const academyService = require('../services/academyService');
 
+function buildLogoUrl(req, filename) {
+  return filename ? `${req.protocol}://${req.get('host')}/files/${filename}` : null;
+}
+
 async function checkAvailability(req, res) {
   const { slug, businessNumber } = req.body;
 
@@ -28,7 +32,7 @@ async function signup(req, res) {
       ownerName: academy.ownerName,
       phone: academy.phone,
       address: academy.address,
-      logoUrl: academy.logoUrl,
+      logoUrl: buildLogoUrl(req, academy.logoUrl),
       smsSenderNumber: academy.smsSenderNumber,
       subscriptionStatus: academy.subscriptionStatus,
       createdAt: academy.createdAt,
@@ -59,7 +63,7 @@ async function updateAcademy(req, res) {
       ownerName: academy.ownerName,
       phone: academy.phone,
       address: academy.address,
-      logoUrl: academy.logoUrl,
+      logoUrl: buildLogoUrl(req, academy.logoUrl),
       smsSenderNumber: academy.smsSenderNumber,
       subscriptionStatus: academy.subscriptionStatus,
       updatedAt: academy.updatedAt,
