@@ -89,9 +89,9 @@ async function getById(req, res) {
 async function update(req, res) {
   const { academyId } = req.academy
   const { reportId } = req.params
-  const { teacherFeedback } = req.body
+  const { teacherFeedback, aiFeedback } = req.body
 
-  const report = await reportService.update({ academyId, reportId, teacherFeedback })
+  const report = await reportService.update({ academyId, reportId, teacherFeedback, aiFeedback })
 
   return res.status(200).json({
     success: true,
