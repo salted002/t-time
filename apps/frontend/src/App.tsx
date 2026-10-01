@@ -12,6 +12,10 @@ import LoginPage from '@/pages/auth/loginPage'
 import StudentListPage from '@/pages/students/StudentListPage'
 import ComponentsPage from '@/pages/dev/ComponentsPage'
 import ProtectedRoute from '@/router/ProtectedRoute'
+import ExamListPage from './pages/ExamListPage'
+import ExamFormPage from './pages/ExamFormPage'
+import ExamDetailPage from './pages/ExamDetailPage'
+import ExamResultFormPage from './pages/ExamResultFormPage'
 
 function App() {
   return (
@@ -38,7 +42,11 @@ function App() {
           >
             <Route index element={<Navigate to="students" replace />} />
             <Route path="students" element={<StudentListPage />} />
-            <Route path="exams" element={<div>시험 관리 (임시)</div>} />
+            <Route path="exams" element={<ExamListPage />} />
+            <Route path="exams/new" element={<ExamFormPage />} />
+            <Route path="exams/:examId" element={<ExamDetailPage />} />
+            <Route path="exams/:examId/edit" element={<ExamFormPage />} />
+            <Route path="exams/:examId/results" element={<ExamResultFormPage />} />
           </Route>
 
           {import.meta.env.DEV && <Route path="/dev/components" element={<ComponentsPage />} />}

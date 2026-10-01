@@ -57,7 +57,7 @@ export default function ExamListPage() {
             <Button type="button" variant="outline">
               시험 복사
             </Button>
-            <Button type="button">
+            <Button type="button" onClick={() => navigate(`/${slug}/exams/new`)}>
               <Plus />
               시험 추가
             </Button>

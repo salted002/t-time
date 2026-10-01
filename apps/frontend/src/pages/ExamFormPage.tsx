@@ -143,8 +143,7 @@ function ExamForm({ mode, slug, exam }: ExamFormProps) {
 
       const created = await examApi.create(toCreatePayload(values))
       toast.success('시험이 생성되었습니다.')
-      // TODO: 성적 입력 화면(SCR-EXAM-RESULT-INPUT) 구현 후 그쪽으로 이동
-      navigate(`${listPath}/${created.id}`)
+      navigate(`${listPath}/${created.id}/results`)
     } catch (e) {
       toast.error(
         getErrorMessage(e, isEdit ? '시험을 수정하지 못했습니다.' : '시험을 생성하지 못했습니다.'),
