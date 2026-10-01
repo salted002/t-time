@@ -1,11 +1,15 @@
 import { api } from '@/lib/api'
-import type { ReportListResponse } from '@/types/report'
+import type { Student } from '@/types/student'
+import type { BatchCandidate, ReportListResponse } from '@/types/report'
 
 interface ReportListParams {
   q: string
   page: number
   size: number
 }
+
+// 서버가 허용하는 size 최대값(200)
+const STUDENT_FETCH_SIZE = 200
 
 export const reportApi = {
   // GET /reports (API 30)
@@ -16,4 +20,31 @@ export const reportApi = {
         signal,
       })
       .then((response) => response.data),
+
+  // GET /students — 리포트 만들기 ① 학생 선택용 (재원생 전체)
+  students: (signal: AbortSignal): Promise<Student[]> =>
+    api
+      .get<{ students: Student[] }>('/students', {
+        params: { status: '재원', size: STUDENT_FETCH_SIZE },
+        signal,
+      })
+      .then((response) => response.data.students),
+
+  // POST /reports/subject-options (API 33)
+  subjectOptions: (studentIds: string[], signal: AbortSignal): Promise<string[]> =>
+    api
+      .post<{ subjectNames: string[] }>('/reports/subject-options', { studentIds }, { signal })
+      .then((response) => response.data.subjectNames),
+
+  // POST /reports/batch-preview (API 34)
+  batchPreview: (
+    studentIds: string[],
+    subjectNames: string[],
+    signal: AbortSignal,
+  ): Promise<BatchCandidate[]> =>
+    api
+      .post<{
+        candidates: BatchCandidate[]
+      }>('/reports/batch-preview', { studentIds, subjectNames }, { signal })
+      .then((response) => response.data.candidates),
 }

@@ -17,3 +17,21 @@ export interface ReportListResponse {
   page: number
   size: number
 }
+
+// POST /reports/subject-options (API 33)
+export interface SubjectOptionsResponse {
+  subjectNames: string[]
+}
+
+// POST /reports/batch-preview (API 34)
+export interface BatchCandidate {
+  studentId: string
+  studentName: string
+  availableSubjects: string[]
+  generatable: boolean
+}
+
+export interface BatchPreviewResponse {
+  candidates: BatchCandidate[]
+  generatableCount: number
+}
