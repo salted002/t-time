@@ -1,6 +1,7 @@
+import { useFetch } from '@/hooks/useFetch'
 import { examApi } from '@/api/examApi'
-import { useFetch } from './useFetch'
 
+// 요구사항 REQ-EXAM-01: 페이지당 10건
 export const EXAM_PAGE_SIZE = 10
 
 export function useExams({ q, page }: { q: string; page: number }) {

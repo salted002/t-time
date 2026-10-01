@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { PageHeader } from '@/components/templates/PageHeader'
 import { DataTable, type Column } from '@/components/templates/DataTable'
@@ -10,11 +11,9 @@ import { EXAM_PAGE_SIZE, useExams } from '@/hooks/useExams'
 import { formatCreatedDate, formatSerial, formatShortDate } from '@/lib/format'
 import type { ExamSummary } from '@/types/exam'
 
-// 테이블의 한 행
+// DataTable 컬럼 key는 행의 속성명이어야 하므로 일련번호도 행 속성으로 붙인다.
 type ExamRow = ExamSummary & { serial: string }
 
-// 테이블의 한 열 (컬럼)
-// 일련번호 | 시험일자 | 시험이름 | 반 | 응시인원 | 생성일시
 const COLUMNS: Column<ExamRow>[] = [
   { key: 'serial', header: '번호', className: 'w-24 tabular-nums' },
   { key: 'examDate', header: '시험일자', cell: (exam) => formatShortDate(exam.examDate) },
@@ -28,17 +27,20 @@ const COLUMNS: Column<ExamRow>[] = [
   { key: 'createdAt', header: '생성일시', cell: (exam) => formatCreatedDate(exam.createdAt) },
 ]
 
+// 시험목록페이지 (SCR-EXAM-LIST)
 export default function ExamListPage() {
+  const { slug } = useParams<{ slug: string }>()
+  const navigate = useNavigate()
+
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
-  const debouncedSearch = useDebouncedValue(search.trim())
 
+  const debouncedSearch = useDebouncedValue(search.trim())
   const { data, latestData, loading, error } = useExams({ q: debouncedSearch, page })
 
-  // 전체 시험 수
+  // 로딩 중 건수가 0으로 깜빡이지 않도록 latestData 사용
   const count = latestData?.count ?? 0
 
-  // data가 null(로딩 중·에러)이면 빈 배열. index는 현재 페이지에서 몇 번째 줄인지(0부터)이다.
   const rows: ExamRow[] = (data?.exams ?? []).map((exam, index) => ({
     ...exam,
     serial: formatSerial(count, page, EXAM_PAGE_SIZE, index),
@@ -78,13 +80,13 @@ export default function ExamListPage() {
         columns={COLUMNS}
         rows={rows}
         rowKey={(exam) => exam.id}
+        onRowClick={(exam) => navigate(`/${slug}/exams/${exam.id}`)}
         loading={loading}
         empty={
           error
             ? { title: '시험 목록을 불러오지 못했습니다', description: error }
-            : { title: '조건에 맞는 시험이 없습니다', description: '검색어를 다르게 입력해 보세요.' }
+            : { title: '조건에 맞는 시험이 없습니다', description: '검색어를 바꿔 보세요.' }
         }
-        // 표 아래 "전체 N건 중 a–b건 표시 / 이전 다음" 영역
         pagination={{
           page,
           pageSize: EXAM_PAGE_SIZE,

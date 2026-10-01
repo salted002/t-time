@@ -1,15 +1,14 @@
 import { api } from '@/lib/api'
-import type { ExamListResponse } from '@/types/exam'
+import type { ExamDetail, ExamDetailResponse, ExamListResponse } from '@/types/exam'
 
-// 시험 목록 요청에 보낼 값
 interface ExamListParams {
   q: string
   page: number
   size: number
 }
 
-// 시험 관련 서버 요청 함수 모음
 export const examApi = {
+  // GET /exams (API 19)
   list: (params: ExamListParams, signal: AbortSignal) =>
     api
       .get<ExamListResponse>('/exams', {
@@ -17,4 +16,13 @@ export const examApi = {
         signal,
       })
       .then((response) => response.data),
+
+  // GET /exams/:examId (API 21)
+  get: (examId: string, signal: AbortSignal): Promise<ExamDetail> =>
+    api
+      .get<ExamDetailResponse>(`/exams/${examId}`, { signal })
+      .then((response) => response.data.exam),
+
+  // DELETE /exams/:examId (API 25)
+  remove: (examId: string): Promise<void> => api.delete(`/exams/${examId}`).then(() => undefined),
 }
