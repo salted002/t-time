@@ -1,21 +1,24 @@
-import { useNavigate, useParams } from 'react-router-dom';
-import { PageHeader } from '@/components/templates/PageHeader';
-import { SectionCard } from '@/components/common/SectionCard';
-import { InfoGrid } from '@/components/common/InfoGrid';
-import { StatusBadge } from '@/components/common/StatusBadge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useStudentDetail } from '@/hooks/useStudentDetail';
-import { STUDENT_STATUS_TONE } from '@/lib/constants';
-import { formatDate } from '@/lib/formatDate';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+
+import { PageHeader } from '@/components/templates/PageHeader'
+import { SectionCard } from '@/components/common/SectionCard'
+import { InfoGrid } from '@/components/common/InfoGrid'
+import { StatusBadge } from '@/components/common/StatusBadge'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { StudentExamTab } from '@/components/students/StudentExamTab'
+import { useStudentDetail } from '@/hooks/useStudentDetail'
+import { STUDENT_STATUS_TONE } from '@/lib/constants'
+import { formatDate } from '@/lib/formatDate'
 
 export default function StudentDetailPage() {
-  const { slug, studentId } = useParams();
-  const navigate = useNavigate();
-  const { student, notFound, error, loading } = useStudentDetail(studentId);
+  const { slug, studentId } = useParams()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const { student, notFound, error, loading } = useStudentDetail(studentId)
 
-  const listPath = `/${slug}/students`;
+  const listPath = `/${slug}/students`
 
   if (!loading && !student) {
     return (
@@ -39,11 +42,11 @@ export default function StudentDetailPage() {
           </div>
         </SectionCard>
       </div>
-    );
+    )
   }
 
   return (
-    <Tabs defaultValue="info">
+    <Tabs defaultValue={searchParams.get('tab') ?? 'info'}>
       <PageHeader
         title={student ? `${student.name} 학생` : '학생 상세'}
         guide="학생의 기본정보, 성적, 상담 내용을 확인합니다."
@@ -103,11 +106,7 @@ export default function StudentDetailPage() {
       </TabsContent>
 
       <TabsContent value="scores">
-        <SectionCard>
-          <p className="py-10 text-center text-sm text-muted-foreground">
-            성적 탭은 준비 중입니다.
-          </p>
-        </SectionCard>
+        {studentId && <StudentExamTab studentId={studentId} />}
       </TabsContent>
 
       <TabsContent value="counselings">
@@ -118,5 +117,5 @@ export default function StudentDetailPage() {
         </SectionCard>
       </TabsContent>
     </Tabs>
-  );
+  )
 }
