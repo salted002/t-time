@@ -5,6 +5,7 @@ import { SlidePanel } from '@/components/common/SlidePanel'
 import { ScoreCompareChart } from '@/components/charts/ScoreCompareChart'
 import { ScoreTrendChart } from '@/components/charts/ScoreTrendChart'
 import { AiFeedbackSection } from '@/components/reports/AiFeedbackSection'
+import { SendSingleModal } from '@/components/reports/SendSingleModal'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -26,6 +27,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { reportSingleApi } from '@/api/reportSingleApi'
 import { useSingleReportPreview } from '@/hooks/useSingleReportPreview'
+import { useStudentDetail } from '@/hooks/useStudentDetail'
 import { getErrorMessage } from '@/lib/errors'
 import { formatFullDate, formatScore, formatShortDate } from '@/lib/format'
 import type { ShareLink, SingleReportPreview } from '@/types/reportSingle'
@@ -33,13 +35,20 @@ import type { ShareLink, SingleReportPreview } from '@/types/reportSingle'
 interface ReportViewSingleSlideProps {
   studentId: string
   examId: string
+  examName?: string
   onClose: () => void
 }
 
 // 리포트미리보기슬라이드_단일 (SCR-REPORT-VIEW-SINGLE)
 // 열 때마다 새로 마운트해서 쓴다. 저장 전 초안은 이 컴포넌트의 상태에만 있다.
-export function ReportViewSingleSlide({ studentId, examId, onClose }: ReportViewSingleSlideProps) {
+export function ReportViewSingleSlide({
+  studentId,
+  examId,
+  examName,
+  onClose,
+}: ReportViewSingleSlideProps) {
   const { data: preview, loading, error, refetch } = useSingleReportPreview(studentId, examId)
+  const { student, loading: studentLoading } = useStudentDetail(studentId)
 
   const [selected, setSelected] = useState<string | null>(null)
   const [teacherFeedback, setTeacherFeedback] = useState('')
@@ -47,6 +56,8 @@ export function ReportViewSingleSlide({ studentId, examId, onClose }: ReportView
   const [saving, setSaving] = useState(false)
   const [reportId, setReportId] = useState<string | null>(null)
   const [shareLink, setShareLink] = useState<ShareLink | null>(null)
+  const [sendOpen, setSendOpen] = useState(false)
+  const [sent, setSent] = useState(false)
 
   const aiFeedback = { ...(preview?.aiSubjectFeedback ?? {}), ...aiEdits }
   const subjectName = selected ?? preview?.subjectNames[0] ?? ''
@@ -70,6 +81,7 @@ export function ReportViewSingleSlide({ studentId, examId, onClose }: ReportView
       }
       setShareLink(await reportSingleApi.createShareLink(id))
       toast.success('리포트가 저장되었습니다.')
+      setSendOpen(true)
     } catch (e) {
       toast.error(
         getErrorMessage(
@@ -132,7 +144,9 @@ export function ReportViewSingleSlide({ studentId, examId, onClose }: ReportView
         </div>
       )}
 
-      {preview && shareLink && <SavedView link={shareLink} />}
+      {preview && shareLink && (
+        <SavedView link={shareLink} sent={sent} onSend={() => setSendOpen(true)} />
+      )}
 
       {preview && !shareLink && (
         <Draft
@@ -145,6 +159,17 @@ export function ReportViewSingleSlide({ studentId, examId, onClose }: ReportView
           onAiFeedbackChange={(name, value) =>
             setAiEdits((current) => ({ ...current, [name]: value }))
           }
+        />
+      )}
+      {sendOpen && reportId && shareLink && preview && !studentLoading && (
+        <SendSingleModal
+          reportId={reportId}
+          studentName={preview.studentName}
+          defaultPhone={student?.parentPhone ?? ''}
+          examName={examName}
+          link={shareLink.url}
+          onClose={() => setSendOpen(false)}
+          onSent={() => setSent(true)}
         />
       )}
     </SlidePanel>
@@ -305,8 +330,8 @@ function ResultsTableView({ preview }: { preview: SingleReportPreview }) {
   )
 }
 
-// 저장 완료 화면. TODO: SendSingleModal(API 36) 연결 후 이 화면 대신 발송창을 연다.
-function SavedView({ link }: { link: ShareLink }) {
+// 저장 완료 화면. 발송창을 닫았을 때 다시 열 수 있다.
+function SavedView({ link, sent, onSend }: { link: ShareLink; sent: boolean; onSend: () => void }) {
   const [copied, setCopied] = useState(false)
 
   const copy = async () => {
@@ -333,6 +358,11 @@ function SavedView({ link }: { link: ShareLink }) {
         <Button type="button" variant="outline" size="sm" onClick={copy}>
           {copied ? <Check /> : <Copy />}
           링크 복사
+        </Button>
+      </div>
+      <div>
+        <Button type="button" onClick={onSend}>
+          {sent ? '문자 다시 발송하기' : '문자로 발송하기'}
         </Button>
       </div>
     </div>

@@ -253,6 +253,7 @@ function ExamResultView({ result, slug, studentId, examId, backPath }: ExamResul
         <ReportViewSingleSlide
           studentId={studentId}
           examId={examId}
+          examName={examInfo.examName}
           onClose={() => setReportOpen(false)}
         />
       )}
