@@ -685,9 +685,9 @@ async function createBulk({ academyId, reports }) {
 }
 
 // 리포트 상세 — 선생님 피드백 수정 (유일하게 수정 가능한 필드)
-async function update({ academyId, reportId, teacherFeedback }) {
-  if (teacherFeedback === undefined) {
-    throwError(400, 'teacherFeedback은 필수입니다.')
+async function update({ academyId, reportId, teacherFeedback, aiFeedback }) {
+  if (teacherFeedback === undefined && aiFeedback === undefined) {
+    throwError(400, 'teacherFeedback 또는 aiFeedback 중 최소 하나는 보내야 합니다.')
   }
 
   const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
@@ -700,11 +700,26 @@ async function update({ academyId, reportId, teacherFeedback }) {
     throwError(404, '리포트를 찾을 수 없습니다.')
   }
 
+  const subscribed = academy.subscriptionStatus === 'SUBSCRIBED'
+  if (aiFeedback !== undefined && !subscribed) {
+    throwError(403, '구독 중인 학원만 AI 피드백을 수정할 수 있습니다.')
+  }
+
+  const updates = {}
+  if (teacherFeedback !== undefined) {
+    updates.teacherFeedback = teacherFeedback
+  }
+  if (aiFeedback !== undefined) {
+    // 과목별 부분 수정 — 넘어온 과목만 덮어쓰고 나머지는 유지
+    updates.aiFeedback = { ...(report.aiFeedback ?? {}), ...aiFeedback }
+  }
+
   await report.update({ teacherFeedback })
 
   return {
     id: report.id,
     teacherFeedback: report.teacherFeedback,
+    aiFeedback: report.aiFeedback,
   }
 }
 
