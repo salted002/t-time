@@ -1,0 +1,59 @@
+name: Build and deploy Node.js app to Azure Web App - yangpa-be
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'be-azure/**'
+      - '.github/workflows/be.yml'
+  workflow_dispatch:
+
+jobs: # GitHub Actions이 job 1개당 1개의 VM을 만든다. (runner)
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read #This is required for actions/checkout
+
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    steps:
+      - uses: actions/checkout@v4 # 깃헙에서 소스를 가져옴
+
+      - name: Set up Node.js version
+        uses: actions/setup-node@v3 # Node.js 설치
+        with:
+          node-version: '24.x'
+
+      - name: npm install, build, and test
+        run: | # 파이프: 순서대로. (없으면 install만)
+          npm install
+          npm run build --if-present
+          npm run test --if-present
+
+      - name: Upload artifact for deployment job # deploy runner에게 전달.
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-app
+          path: apps/backend
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download artifact from build job # build runner가 업로드한 것을 다운로드함
+        uses: actions/download-artifact@v4
+        with:
+          name: node-app
+
+      - name: 'Deploy to Azure Web App'
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'be-prod-ttime' # App Service 웹앱 이름
+          slot-name: 'staging' # 배포 슬롯 이름
+          package: .
+          publish-profile: ${{ secrets.BE_PROFILE }}
