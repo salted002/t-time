@@ -8,6 +8,9 @@ export interface AuthMe {
     name: string;
     slug: string;
     logoUrl: string | null;
+    phone: string | null;
+    address: string | null;
+    smsSenderNumber: string | null;
     subscriptionStatus: 'FREE' | 'SUBSCRIBED';
   };
   isDemo: boolean;

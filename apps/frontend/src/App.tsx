@@ -10,6 +10,9 @@ import LandingPage from '@/pages/landing/LandingPage'
 import SignupPage from '@/pages/auth/SignupPage'
 import LoginPage from '@/pages/auth/loginPage'
 import StudentListPage from '@/pages/students/StudentListPage'
+import StudentDetailPage from '@/pages/students/StudentDetailPage'
+import AcademySettingsPage from '@/pages/settings/AcademySettingsPage'
+import PasswordChangePage from '@/pages/settings/PasswordChangePage'
 import ComponentsPage from '@/pages/dev/ComponentsPage'
 import ProtectedRoute from '@/router/ProtectedRoute'
 
@@ -38,7 +41,10 @@ function App() {
           >
             <Route index element={<Navigate to="students" replace />} />
             <Route path="students" element={<StudentListPage />} />
+            <Route path="students/:studentId" element={<StudentDetailPage />} />
             <Route path="exams" element={<div>시험 관리 (임시)</div>} />
+            <Route path="settings" element={<AcademySettingsPage />} />
+            <Route path="settings/password" element={<PasswordChangePage />} />
           </Route>
 
           {import.meta.env.DEV && <Route path="/dev/components" element={<ComponentsPage />} />}
