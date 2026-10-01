@@ -57,7 +57,6 @@ function App() {
             <Route path="exams/:examId/edit" element={<ExamFormPage />} />
             <Route path="exams/:examId/results" element={<ExamResultFormPage />} />
             <Route path="reports" element={<ReportListPage />} />
-            <Route path="reports" element={<ReportListPage />} />
             <Route path="reports/new" element={<ReportBuildPage />} />
 
             <Route path="settings" element={<AcademySettingsPage />} />
