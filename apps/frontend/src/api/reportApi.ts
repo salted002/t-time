@@ -1,6 +1,12 @@
 import { api } from '@/lib/api'
 import type { Student } from '@/types/student'
-import type { BatchCandidate, ReportListResponse } from '@/types/report'
+import type {
+  BatchCandidate,
+  BulkReportItem,
+  ReportListResponse,
+  ReportPreview,
+  SavedReport,
+} from '@/types/report'
 
 interface ReportListParams {
   q: string
@@ -43,8 +49,20 @@ export const reportApi = {
     signal: AbortSignal,
   ): Promise<BatchCandidate[]> =>
     api
-      .post<{
-        candidates: BatchCandidate[]
-      }>('/reports/batch-preview', { studentIds, subjectNames }, { signal })
+      .post<{ candidates: BatchCandidate[] }>(
+        '/reports/batch-preview',
+        { studentIds, subjectNames },
+        { signal },
+      )
       .then((response) => response.data.candidates),
+
+  // POST /reports/preview (API 27) — 일괄 흐름: 학생 1명 + 선택한 과목들
+  preview: (studentId: string, subjectNames: string[], signal: AbortSignal): Promise<ReportPreview> =>
+    api
+      .post<{ preview: ReportPreview }>('/reports/preview', { studentId, subjectNames }, { signal })
+      .then((response) => response.data.preview),
+
+  // POST /reports/bulk (API 35) — 저장 + 공유 링크 생성
+  saveBulk: (reports: BulkReportItem[]): Promise<SavedReport[]> =>
+    api.post<{ reports: SavedReport[] }>('/reports/bulk', { reports }).then((response) => response.data.reports),
 }

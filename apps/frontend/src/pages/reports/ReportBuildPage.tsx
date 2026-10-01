@@ -1,10 +1,13 @@
-import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import { PageHeader } from '@/components/templates/PageHeader'
 import { SectionCard } from '@/components/common/SectionCard'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Stepper } from '@/components/common/Stepper'
 import { CheckList } from '@/components/reports/CheckList'
+import { ReportViewMultiSlide } from '@/components/reports/ReportViewMultiSlide'
+import { ResultCardList } from '@/components/reports/build/ResultCardList'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -18,6 +21,9 @@ import {
 } from '@/components/ui/table'
 import { reportApi } from '@/api/reportApi'
 import { useFetch } from '@/hooks/useFetch'
+import { usePreviewQueue } from '@/hooks/usePreviewQueue'
+import { getErrorMessage } from '@/lib/errors'
+import type { BulkReportItem } from '@/types/report'
 
 const STEPS = ['학생 선택', '과목 선택', '생성 확인', '생성 결과']
 
@@ -26,6 +32,7 @@ const STEPS = ['학생 선택', '과목 선택', '생성 확인', '생성 결과
 // 페이지를 벗어나면 사라지는 것이 의도된 동작이다.
 export default function ReportBuildPage() {
   const { slug } = useParams<{ slug: string }>()
+  const navigate = useNavigate()
 
   const [step, setStep] = useState(0)
   const [studentIds, setStudentIds] = useState<string[]>([])
@@ -33,6 +40,11 @@ export default function ReportBuildPage() {
   const [uncheckedIds, setUncheckedIds] = useState<string[]>([]) // ③에서 사용자가 체크 해제한 학생
   const [studentSearch, setStudentSearch] = useState('')
   const [subjectSearch, setSubjectSearch] = useState('')
+  const [resultCheckedIds, setResultCheckedIds] = useState<string[]>([])
+  const [openStudentId, setOpenStudentId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  const queue = usePreviewQueue()
 
   // 요청은 해당 단계에 들어왔을 때만 보낸다 (key = null이면 요청 안 함)
   const students = useFetch('report-students', (signal) => reportApi.students(signal))
@@ -85,6 +97,52 @@ export default function ReportBuildPage() {
     if (next < step) setUncheckedIds([])
     setStep(next)
   }
+
+  const startGeneration = () => {
+    const targets = checkedCandidates.map((candidate) => ({
+      id: candidate.studentId,
+      name: candidate.studentName,
+    }))
+    queue.start(targets, subjectNames)
+    setResultCheckedIds([])
+    setStep(3)
+  }
+
+  const savedCandidates = queue.items.filter(
+    (item) => item.status === 'done' && resultCheckedIds.includes(item.studentId),
+  )
+  const hasUnsaved = step === 3 && queue.items.some((item) => item.status === 'done')
+
+  // 새로고침·탭 닫기 시 저장하지 않은 리포트가 사라진다는 브라우저 기본 경고
+  useEffect(() => {
+    if (!hasUnsaved) return
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault()
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [hasUnsaved])
+
+  const saveSelected = async () => {
+    const reports: BulkReportItem[] = savedCandidates.map((item) => ({
+      studentId: item.studentId,
+      examIds: item.preview!.examIds,
+      subjectNames: item.preview!.subjectNames,
+      ...(item.teacherFeedback.trim() && { teacherFeedback: item.teacherFeedback.trim() }),
+      aiFeedback: item.preview!.subscribed ? item.aiFeedback : null,
+    }))
+
+    setSaving(true)
+    try {
+      const saved = await reportApi.saveBulk(reports)
+      toast.success(`${saved.length}건의 리포트가 저장되었습니다.`)
+      // TODO: 메시지 템플릿 API 준비 후 SMS 발송 모달(SCR-SEND-MULTI)을 여기서 연다. 지금은 목록에서 확인한다.
+      navigate(`/${slug}/reports`)
+    } catch (e) {
+      toast.error(getErrorMessage(e, '리포트를 저장하지 못했습니다.'))
+      setSaving(false)
+    }
+  }
+
+  const openItem = queue.items.find((item) => item.studentId === openStudentId) ?? null
 
   return (
     <div>
@@ -232,11 +290,10 @@ export default function ReportBuildPage() {
               <Button type="button" variant="outline" onClick={() => goTo(1)}>
                 이전
               </Button>
-              {/* TODO: 생성 결과(④) 단계 구현 — checkedCandidates 학생별로 POST /reports/preview를 3개씩 동시 호출 */}
               <Button
                 type="button"
                 disabled={checkedCandidates.length === 0}
-                onClick={() => goTo(3)}
+                onClick={startGeneration}
               >
                 {checkedCandidates.length}건의 리포트 생성하기
               </Button>
@@ -245,11 +302,37 @@ export default function ReportBuildPage() {
         )}
 
         {step === 3 && (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            생성 결과 화면은 다음 단계에서 구현합니다. (선택된 학생 {checkedCandidates.length}명)
-          </p>
+          <div className="flex flex-col gap-4">
+            <ResultCardList
+              items={queue.items}
+              checkedIds={resultCheckedIds}
+              onCheckedChange={setResultCheckedIds}
+              onOpen={setOpenStudentId}
+              onRetry={queue.retry}
+            />
+
+            <div className="flex items-center justify-between border-t pt-4">
+              <p className="text-xs text-muted-foreground">
+                저장하지 않고 이 화면을 나가면 만든 리포트는 사라집니다.
+              </p>
+              <Button
+                type="button"
+                disabled={savedCandidates.length === 0 || saving}
+                onClick={saveSelected}
+              >
+                선택한 리포트 저장하기({savedCandidates.length})
+              </Button>
+            </div>
+          </div>
         )}
       </SectionCard>
+
+      <ReportViewMultiSlide
+        item={openItem}
+        onClose={() => setOpenStudentId(null)}
+        onTeacherFeedbackChange={queue.setTeacherFeedback}
+        onAiFeedbackChange={queue.setAiFeedback}
+      />
     </div>
   )
 }
