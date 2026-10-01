@@ -115,7 +115,12 @@ export default function ExamDetailPage() {
       <SectionCard
         title="시험 정보"
         actions={
-          <Button type="button" variant="outline" size="sm">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`${listPath}/${exam.id}/edit`)}
+          >
             시험 정보 수정
           </Button>
         }
@@ -128,7 +133,12 @@ export default function ExamDetailPage() {
         title="시험 결과"
         description={`응시 ${exam.participants.length}명`}
         actions={
-          <Button type="button" variant="outline" size="sm">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`${listPath}/${exam.id}/results`)}
+          >
             성적 수정
           </Button>
         }

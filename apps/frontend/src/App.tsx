@@ -15,6 +15,11 @@ import AcademySettingsPage from '@/pages/settings/AcademySettingsPage'
 import PasswordChangePage from '@/pages/settings/PasswordChangePage'
 import ComponentsPage from '@/pages/dev/ComponentsPage'
 import ProtectedRoute from '@/router/ProtectedRoute'
+import ExamListPage from './pages/exams/ExamListPage'
+import ExamFormPage from './pages/exams/ExamFormPage'
+import ExamDetailPage from './pages/exams/ExamDetailPage'
+import ExamResultFormPage from './pages/exams/ExamResultFormPage'
+import ReportListPage from '@/pages/reports/ReportListPage'
 
 function App() {
   return (
@@ -42,7 +47,12 @@ function App() {
             <Route index element={<Navigate to="students" replace />} />
             <Route path="students" element={<StudentListPage />} />
             <Route path="students/:studentId" element={<StudentDetailPage />} />
-            <Route path="exams" element={<div>시험 관리 (임시)</div>} />
+            <Route path="exams" element={<ExamListPage />} />
+            <Route path="exams/new" element={<ExamFormPage />} />
+            <Route path="exams/:examId" element={<ExamDetailPage />} />
+            <Route path="exams/:examId/edit" element={<ExamFormPage />} />
+            <Route path="exams/:examId/results" element={<ExamResultFormPage />} />
+            <Route path="reports" element={<ReportListPage />} />
             <Route path="settings" element={<AcademySettingsPage />} />
             <Route path="settings/password" element={<PasswordChangePage />} />
           </Route>
