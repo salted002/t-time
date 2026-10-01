@@ -12,10 +12,10 @@ import LoginPage from '@/pages/auth/loginPage'
 import StudentListPage from '@/pages/students/StudentListPage'
 import ComponentsPage from '@/pages/dev/ComponentsPage'
 import ProtectedRoute from '@/router/ProtectedRoute'
-import ExamListPage from './pages/ExamListPage'
-import ExamFormPage from './pages/ExamFormPage'
-import ExamDetailPage from './pages/ExamDetailPage'
-import ExamResultFormPage from './pages/ExamResultFormPage'
+import ExamListPage from './pages/exams/ExamListPage'
+import ExamFormPage from './pages/exams/ExamFormPage'
+import ExamDetailPage from './pages/exams/ExamDetailPage'
+import ExamResultFormPage from './pages/exams/ExamResultFormPage'
 
 function App() {
   return (
