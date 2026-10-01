@@ -19,6 +19,7 @@ import ExamListPage from './pages/exams/ExamListPage'
 import ExamFormPage from './pages/exams/ExamFormPage'
 import ExamDetailPage from './pages/exams/ExamDetailPage'
 import ExamResultFormPage from './pages/exams/ExamResultFormPage'
+import ReportListPage from '@/pages/reports/ReportListPage'
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
             <Route path="exams/:examId" element={<ExamDetailPage />} />
             <Route path="exams/:examId/edit" element={<ExamFormPage />} />
             <Route path="exams/:examId/results" element={<ExamResultFormPage />} />
+            <Route path="reports" element={<ReportListPage />} />
             <Route path="settings" element={<AcademySettingsPage />} />
             <Route path="settings/password" element={<PasswordChangePage />} />
           </Route>
