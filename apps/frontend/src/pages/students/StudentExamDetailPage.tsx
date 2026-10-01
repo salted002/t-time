@@ -26,6 +26,7 @@ import { EVAL_TYPE_LABEL } from '@/lib/constants'
 import { getErrorMessage } from '@/lib/errors'
 import { formatDate, formatScore, formatShortDate } from '@/lib/format'
 import type { StudentExamResult } from '@/types/studentExam'
+import { ReportViewSingleSlide } from '@/components/reports/ReportViewSingleSlide'
 
 // 학생시험상세페이지 (SCR-STU-EXAM-DETAIL)
 export default function StudentExamDetailPage() {
@@ -66,18 +67,26 @@ export default function StudentExamDetailPage() {
   }
 
   return (
-    <ExamResultView result={result} slug={slug ?? ''} examId={examId ?? ''} backPath={backPath} />
+    <ExamResultView
+      result={result}
+      slug={slug ?? ''}
+      studentId={studentId ?? ''}
+      examId={examId ?? ''}
+      backPath={backPath}
+    />
   )
 }
 
 interface ExamResultViewProps {
   result: StudentExamResult
   slug: string
+  studentId: string
   examId: string
   backPath: string
 }
 
-function ExamResultView({ result, slug, examId, backPath }: ExamResultViewProps) {
+function ExamResultView({ result, slug, studentId, examId, backPath }: ExamResultViewProps) {
+  const [reportOpen, setReportOpen] = useState(false)
   const { examInfo, subjects, results, total } = result
   const isGrade = examInfo.evalType === 'grade'
   const isScoreMax = examInfo.evalType === 'score_max'
@@ -236,11 +245,17 @@ function ExamResultView({ result, slug, examId, backPath }: ExamResultViewProps)
           </Link>
           에서 할 수 있습니다.
         </p>
-        {/* TODO: 단일 리포트 흐름(API 27~29) 연결 */}
-        <Button type="button" disabled>
+        <Button type="button" onClick={() => setReportOpen(true)}>
           이 시험 리포트 만들기
         </Button>
       </div>
+      {reportOpen && (
+        <ReportViewSingleSlide
+          studentId={studentId}
+          examId={examId}
+          onClose={() => setReportOpen(false)}
+        />
+      )}
     </div>
   )
 }
