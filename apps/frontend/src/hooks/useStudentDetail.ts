@@ -16,6 +16,7 @@ interface StudentDetailResult {
 
 export function useStudentDetail(studentId: string | undefined) {
   const [result, setResult] = useState<StudentDetailResult | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!studentId) return;
@@ -47,7 +48,7 @@ export function useStudentDetail(studentId: string | undefined) {
     return () => {
       ignore = true;
     };
-  }, [studentId]);
+  }, [studentId, reloadKey]);
 
   // 응답이 현재 학생과 다르면 아직 요청 중인 상태
   const loading = Boolean(studentId) && result?.studentId !== studentId;
@@ -57,5 +58,6 @@ export function useStudentDetail(studentId: string | undefined) {
     notFound: loading ? false : (result?.notFound ?? false),
     error: loading ? null : (result?.error ?? null),
     loading,
+    refetch: () => setReloadKey((key) => key + 1),
   };
 }
