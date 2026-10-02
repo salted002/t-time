@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/templates/PageHeader';
 import { DataTable, type Column } from '@/components/templates/DataTable';
+import { ClassCreateModal } from '@/components/classes/ClassCreateModal';
 import { ClassDetailModal } from '@/components/classes/ClassDetailModal';
 import { Button } from '@/components/ui/button';
 import { classApi } from '@/api/classApi';
@@ -26,6 +27,7 @@ const COLUMNS: Column<ClassSummary>[] = [
 // 반목록페이지 (SCR-CLASS-LIST)
 export default function ClassListPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const { data, loading, error, refetch } = useFetch('classes', classApi.list);
 
   return (
@@ -35,8 +37,8 @@ export default function ClassListPage() {
         guide="반을 만들고 담임강사와 소속 학생을 관리할 수 있습니다."
         description="학원의 반 목록과 반별 학생 수를 확인합니다."
         actions={
+          <Button type="button" onClick={() => setCreateOpen(true)}>
           // TODO: 반 추가 화면 연결
-          <Button type="button">
             <Plus />
             반 추가
           </Button>
@@ -55,6 +57,8 @@ export default function ClassListPage() {
             : { title: '등록된 반이 없습니다', description: '[반 추가]로 첫 반을 만들어 보세요.' }
         }
       />
+
+      <ClassCreateModal open={createOpen} onOpenChange={setCreateOpen} onCreated={refetch} />
 
       <ClassDetailModal
         classId={selectedId}
