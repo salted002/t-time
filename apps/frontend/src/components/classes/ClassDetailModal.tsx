@@ -33,6 +33,17 @@ export function ClassDetailModal({ classId, onClose, onChanged }: ClassDetailMod
     onClose();
   };
 
+  onDeleted: () => void;
+}
+
+// 반상세모달 (SCR-CLASS-DETAIL)
+export function ClassDetailModal({ classId, onClose, onDeleted }: ClassDetailModalProps) {
+  const confirm = useConfirm();
+  const [deleting, setDeleting] = useState(false);
+  const { data, loading, error } = useFetch(classId === null ? null : `class:${classId}`, (signal) =>
+    classApi.get(classId ?? '', signal),
+  );
+
   const handleDelete = async () => {
     if (!data) return;
 
@@ -48,8 +59,9 @@ export function ClassDetailModal({ classId, onClose, onChanged }: ClassDetailMod
     try {
       await classApi.remove(data.id);
       toast.success('반이 삭제되었습니다.');
-      close();
-      onChanged();
+
+      onClose();
+      onDeleted();
     } catch (e) {
       toast.error(getErrorMessage(e, '반을 삭제하지 못했습니다.'));
     } finally {
@@ -58,60 +70,45 @@ export function ClassDetailModal({ classId, onClose, onChanged }: ClassDetailMod
   };
 
   return (
-    <>
-      <FormDialog
-        open={classId !== null && !editing}
-        onOpenChange={(open) => !open && close()}
-        title={data?.name ?? '반 상세'}
-        cancel={false}
-        primary={{ label: '수정', onClick: () => setEditing(true), disabled: !data }}
-      >
-        {loading && (
-          <div className="flex flex-col gap-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-1/2" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        )}
+    <FormDialog
+      open={classId !== null}
+      onOpenChange={(open) => !open && onClose()}
+      title={data?.name ?? '반 상세'}
+      cancel={false}
+      danger={{ label: '삭제', onClick: handleDelete, loading: deleting, disabled: !data }}
+      // TODO: 반 수정 화면 연결
+      primary={{ label: '수정', disabled: !data }}
+    >
+      {loading && (
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-1/2" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      )}
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
-        {data && (
-          <InfoGrid
-            columns={2}
-            items={[
-              { label: '반이름', value: data.name },
-              { label: '담임강사', value: data.teacherName ?? '(미지정)' },
-              { label: '학생수', value: `${data.studentCount}명`, span: 2 },
-              {
-                label: '학생목록',
-                span: 2,
-                value:
-                  data.students.length > 0 ? (
-                    <ChipList items={data.students.map((student) => ({ id: student.id, label: student.name }))} />
-                  ) : (
-                    '-'
-                  ),
-              },
-            ]}
-          />
-        )}
-      </FormDialog>
-
-      {/* 열 때마다 새로 마운트해서 최신 상세 값으로 폼을 채운다 */}
-      {editing && data && (
-        <ClassFormModal
-          open
-          onOpenChange={(open) => !open && setEditing(false)}
-          target={data}
-          onDelete={handleDelete}
-          deleting={deleting}
-          onSaved={() => {
-            refetch();
-            onChanged();
-          }}
+      {data && (
+        <InfoGrid
+          columns={2}
+          items={[
+            { label: '반이름', value: data.name },
+            { label: '담임강사', value: data.teacherName ?? '(미지정)' },
+            { label: '학생수', value: `${data.studentCount}명`, span: 2 },
+            {
+              label: '학생목록',
+              span: 2,
+              value:
+                data.students.length > 0 ? (
+                  <ChipList items={data.students.map((student) => ({ id: student.id, label: student.name }))} />
+                ) : (
+                  '-'
+                ),
+            },
+          ]}
         />
       )}
-    </>
+    </FormDialog>
   );
 }

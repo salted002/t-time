@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/templates/PageHeader';
 import { DataTable, type Column } from '@/components/templates/DataTable';
 import { ClassFormModal } from '@/components/classes/ClassFormModal';
+import { ClassCreateModal } from '@/components/classes/ClassCreateModal';
 import { ClassDetailModal } from '@/components/classes/ClassDetailModal';
 import { Button } from '@/components/ui/button';
 import { classApi } from '@/api/classApi';
@@ -38,6 +39,7 @@ export default function ClassListPage() {
         description="학원의 반 목록과 반별 학생 수를 확인합니다."
         actions={
           <Button type="button" onClick={() => setCreateOpen(true)}>
+          // TODO: 반 추가 화면 연결
             <Plus />
             반 추가
           </Button>
@@ -58,11 +60,13 @@ export default function ClassListPage() {
       />
 
       <ClassFormModal open={createOpen} onOpenChange={setCreateOpen} onSaved={refetch} />
+      <ClassCreateModal open={createOpen} onOpenChange={setCreateOpen} onCreated={refetch} />
 
       <ClassDetailModal
         classId={selectedId}
         onClose={() => setSelectedId(null)}
         onChanged={refetch}
+        onDeleted={refetch}
       />
     </div>
   );
