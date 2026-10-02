@@ -101,4 +101,27 @@ async function remove(req, res) {
   })
 }
 
-module.exports = { list, create, getById, saveResults, update, updateParticipantComment, remove }
+async function copy(req, res) {
+  const { academyId } = req.academy
+  const { examId } = req.params
+  const { classId, examDate, name } = req.body
+
+  const exam = await examService.copy({ academyId, examId, classId, examDate, name })
+
+  return res.status(201).json({
+    success: true,
+    exam: { id: exam.id, name: exam.name },
+    message: '생성되었습니다.',
+  })
+}
+
+module.exports = {
+  list,
+  create,
+  getById,
+  saveResults,
+  update,
+  updateParticipantComment,
+  remove,
+  copy,
+}
