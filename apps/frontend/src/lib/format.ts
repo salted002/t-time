@@ -18,6 +18,11 @@ export function formatCreatedDate(isoString: string): string {
   return format(new Date(isoString), 'yy.MM.dd', { in: tz('Asia/Seoul') })
 }
 
+// ISO 시각(UTC) → 서울 시간 기준 'yyyy.MM.dd'
+export function formatFullDate(isoString: string): string {
+  return format(new Date(isoString), 'yyyy.MM.dd', { in: tz('Asia/Seoul') })
+}
+
 // ISO 시각(UTC) → 서울 시간 기준 'yy.MM.dd HH:mm'
 export function formatCreatedDateTime(isoString: string): string {
   return format(new Date(isoString), 'yy.MM.dd HH:mm', { in: tz('Asia/Seoul') })
