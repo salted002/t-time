@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'be-azure/**'
+      - 'apps/backend/**'
       - '.github/workflows/be.yml'
   workflow_dispatch:
 
