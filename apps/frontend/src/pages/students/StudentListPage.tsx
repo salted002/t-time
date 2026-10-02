@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useMatch, useNavigate, useParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/templates/PageHeader';
 import { DataTable, type Column } from '@/components/templates/DataTable';
@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { StudentCreateDialog } from '@/components/students/StudentCreateDialog';
 import { useClassList } from '@/hooks/useClassList';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { STUDENT_PAGE_SIZE, useStudentList } from '@/hooks/useStudentList';
@@ -51,6 +52,7 @@ const COLUMNS: Column<Student>[] = [
 export default function StudentListPage() {
   const navigate = useNavigate();
   const { slug } = useParams();
+  const isCreateOpen = useMatch('/:slug/students/new') !== null;
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StudentStatus | 'all'>('all');
   const [classFilter, setClassFilter] = useState<string>('all');
@@ -81,7 +83,7 @@ export default function StudentListPage() {
             <Button type="button" variant="outline">
               일괄 등록
             </Button>
-            <Button type="button">
+            <Button type="button" onClick={() => navigate(`/${slug}/students/new`)}>
               <Plus />
               학생 등록
             </Button>
@@ -161,6 +163,13 @@ export default function StudentListPage() {
           onPageChange: setPage,
         }}
       />
+
+      {isCreateOpen && (
+        <StudentCreateDialog
+          onClose={() => navigate(`/${slug}/students`)}
+          onCreated={(studentId) => navigate(`/${slug}/students/${studentId}`)}
+        />
+      )}
     </div>
   );
 }
