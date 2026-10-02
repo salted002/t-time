@@ -15,6 +15,9 @@ import AcademySettingsPage from '@/pages/settings/AcademySettingsPage'
 import PasswordChangePage from '@/pages/settings/PasswordChangePage'
 import ComponentsPage from '@/pages/dev/ComponentsPage'
 import ProtectedRoute from '@/router/ProtectedRoute'
+import AdminProtectedRoute from '@/router/AdminProtectedRoute'
+import AdminLoginPage from '@/pages/admin/AdminLoginPage'
+import AdminAcademyListPage from '@/pages/admin/AdminAcademyListPage'
 import ExamListPage from './pages/exams/ExamListPage'
 import ExamFormPage from './pages/exams/ExamFormPage'
 import ExamDetailPage from './pages/exams/ExamDetailPage'
@@ -33,9 +36,18 @@ function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
 
-          {/* 운영자 페이지 (운영자 인증은 AdminAuthContext 구현 후 보호 예정) */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route path="academies" element={<div>학원 목록 (임시)</div>} />
+          {/* 운영자 페이지: 로그인은 레이아웃 밖, 나머지는 운영자 토큰이 있어야 접근 */}
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route
+            path="/admin"
+            element={
+              <AdminProtectedRoute>
+                <AdminLayout />
+              </AdminProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="academies" replace />} />
+            <Route path="academies" element={<AdminAcademyListPage />} />
           </Route>
 
           {/* 학원 관리자 영역: 로그인·slug 검증을 레이아웃 한 곳에서 처리 */}
@@ -49,6 +61,7 @@ function App() {
           >
             <Route index element={<Navigate to="students" replace />} />
             <Route path="students" element={<StudentListPage />} />
+            <Route path="students/new" element={<StudentListPage />} />
             <Route path="students/:studentId" element={<StudentDetailPage />} />
             <Route path="students/:studentId/exams/:examId" element={<StudentExamDetailPage />} />
             <Route path="exams" element={<ExamListPage />} />

@@ -1,6 +1,7 @@
 import { LogOut } from 'lucide-react'
 import { Outlet, useNavigate } from 'react-router-dom'
 
+import { clearAdminToken } from '@/api/adminApi'
 import { AppSidebar } from '@/components/layout/AppSidebar'
 import { Button } from '@/components/ui/button'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
@@ -10,7 +11,7 @@ export function AdminLayout() {
   const navigate = useNavigate()
 
   const handleLogout = () => {
-    // TODO: AdminAuthContext가 생기면 운영자 토큰 삭제 로직으로 교체
+    clearAdminToken()
     navigate('/admin/login', { replace: true })
   }
 
