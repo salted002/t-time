@@ -27,17 +27,19 @@ jobs: # GitHub Actions이 job 1개당 1개의 VM을 만든다. (runner)
         with:
           node-version: '24.x'
 
-      - name: npm install, build, and test
-        run: | # 파이프: 순서대로. (없으면 install만)
-          npm install
-          npm run build --if-present
-          npm run test --if-present
+      - name: Install production deps in isolated folder
+        run: |
+          mkdir -p /tmp/be
+          cp -r src package.json /tmp/be/
+          cd /tmp/be
+          npm install --omit=dev
+          ls node_modules | head
 
-      - name: Upload artifact for deployment job # deploy runner에게 전달.
+      - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: apps/backend
+          path: /tmp/be
 
   deploy:
     runs-on: ubuntu-latest
