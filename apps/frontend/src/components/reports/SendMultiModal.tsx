@@ -1,4 +1,5 @@
 import { Fragment, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { FormDialog } from '@/components/common/FormDialog'
@@ -37,6 +38,8 @@ interface SendMultiModalProps {
 // 열 때마다 새로 마운트해서 쓴다. 편집 내용은 이 컴포넌트 상태에만 있다.
 export function SendMultiModal({ reports, onClose }: SendMultiModalProps) {
   const confirm = useConfirm()
+  const navigate = useNavigate()
+  const { slug } = useParams<{ slug: string }>()
   const { data: templates, error: templatesError, loading } = useTemplates()
 
   const [edits, setEdits] = useState<Record<string, RowEdit>>({})
@@ -95,6 +98,18 @@ export function SendMultiModal({ reports, onClose }: SendMultiModalProps) {
       if (!ok) return
     }
     onClose()
+  }
+
+  const goToTemplates = async () => {
+    if (sending) return
+    const ok = await confirm({
+      title: '템플릿 관리로 이동할까요?',
+      description:
+        '작성하던 메시지는 지워집니다. 만든 리포트는 리포트 목록에서 다시 확인 후 링크를 발송할 수 있습니다.',
+      confirmLabel: '이동',
+      tone: 'destructive',
+    })
+    if (ok) navigate(`/${slug}/templates`)
   }
 
   const handleSend = async () => {
@@ -242,6 +257,7 @@ export function SendMultiModal({ reports, onClose }: SendMultiModalProps) {
                               draft={buffer}
                               onChange={setBuffer}
                               link={row.link}
+                              onManageTemplates={goToTemplates}
                             />
                             <div className="flex justify-end gap-2">
                               <Button

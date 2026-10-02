@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useConfirm } from '@/hooks/useConfirm'
 import { SMS_MAX_BYTES, SMS_SHORT_BYTES, getSmsBytes, renderSmsTemplate } from '@/lib/smsTemplate'
@@ -19,6 +20,7 @@ interface SmsMessageEditorProps {
   onChange: (draft: SmsDraft) => void
   link: string
   disabled?: boolean
+  onManageTemplates?: () => void
 }
 
 // 템플릿 선택 + 본문 편집 + 잠긴 링크 표시 (단일·다중 발송 공용)
@@ -29,6 +31,7 @@ export function SmsMessageEditor({
   onChange,
   link,
   disabled,
+  onManageTemplates,
 }: SmsMessageEditorProps) {
   const confirm = useConfirm()
 
@@ -80,6 +83,17 @@ export function SmsMessageEditor({
           </Select>
         ) : (
           <span className="text-sm text-muted-foreground">등록된 템플릿이 없습니다.</span>
+        )}
+        {onManageTemplates && (
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            className="ml-auto px-0"
+            onClick={onManageTemplates}
+          >
+            템플릿 관리
+          </Button>
         )}
       </div>
 

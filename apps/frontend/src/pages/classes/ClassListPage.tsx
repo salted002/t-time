@@ -1,14 +1,13 @@
-import { useState } from 'react';
-import { Plus } from 'lucide-react';
-import { PageHeader } from '@/components/templates/PageHeader';
-import { DataTable, type Column } from '@/components/templates/DataTable';
-import { ClassFormModal } from '@/components/classes/ClassFormModal';
-import { ClassCreateModal } from '@/components/classes/ClassCreateModal';
-import { ClassDetailModal } from '@/components/classes/ClassDetailModal';
-import { Button } from '@/components/ui/button';
-import { classApi } from '@/api/classApi';
-import { useFetch } from '@/hooks/useFetch';
-import type { ClassSummary } from '@/types/class';
+import { useState } from 'react'
+import { Plus } from 'lucide-react'
+import { PageHeader } from '@/components/templates/PageHeader'
+import { DataTable, type Column } from '@/components/templates/DataTable'
+import { ClassCreateModal } from '@/components/classes/ClassCreateModal'
+import { ClassDetailModal } from '@/components/classes/ClassDetailModal'
+import { Button } from '@/components/ui/button'
+import { classApi } from '@/api/classApi'
+import { useFetch } from '@/hooks/useFetch'
+import type { ClassSummary } from '@/types/class'
 
 const COLUMNS: Column<ClassSummary>[] = [
   { key: 'name', header: '반 이름', className: 'font-medium' },
@@ -23,13 +22,13 @@ const COLUMNS: Column<ClassSummary>[] = [
     className: 'tabular-nums',
     cell: (item) => `${item.studentCount}명`,
   },
-];
+]
 
 // 반목록페이지 (SCR-CLASS-LIST)
 export default function ClassListPage() {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
-  const { data, loading, error, refetch } = useFetch('classes', classApi.list);
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
+  const { data, loading, error, refetch } = useFetch('classes', classApi.list)
 
   return (
     <div>
@@ -39,9 +38,7 @@ export default function ClassListPage() {
         description="학원의 반 목록과 반별 학생 수를 확인합니다."
         actions={
           <Button type="button" onClick={() => setCreateOpen(true)}>
-          // TODO: 반 추가 화면 연결
-            <Plus />
-            반 추가
+            <Plus /> 반 추가
           </Button>
         }
       />
@@ -59,15 +56,15 @@ export default function ClassListPage() {
         }
       />
 
-      <ClassFormModal open={createOpen} onOpenChange={setCreateOpen} onSaved={refetch} />
       <ClassCreateModal open={createOpen} onOpenChange={setCreateOpen} onCreated={refetch} />
 
-      <ClassDetailModal
-        classId={selectedId}
-        onClose={() => setSelectedId(null)}
-        onChanged={refetch}
-        onDeleted={refetch}
-      />
+      {selectedId && (
+        <ClassDetailModal
+          classId={selectedId}
+          onClose={() => setSelectedId(null)}
+          onChanged={refetch}
+        />
+      )}
     </div>
-  );
+  )
 }
