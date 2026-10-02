@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/templates/PageHeader';
 import { DataTable, type Column } from '@/components/templates/DataTable';
+import { ClassDetailModal } from '@/components/classes/ClassDetailModal';
 import { Button } from '@/components/ui/button';
+import { classApi } from '@/api/classApi';
 import { useFetch } from '@/hooks/useFetch';
-import type { ClassSummary } from '@/hooks/useClassList';
-import { api } from '@/lib/api';
+import type { ClassSummary } from '@/types/class';
 
 const COLUMNS: Column<ClassSummary>[] = [
   { key: 'name', header: '반 이름', className: 'font-medium' },
@@ -23,11 +25,8 @@ const COLUMNS: Column<ClassSummary>[] = [
 
 // 반목록페이지 (SCR-CLASS-LIST)
 export default function ClassListPage() {
-  const { data, loading, error } = useFetch('classes', (signal) =>
-    api
-      .get<{ classes: ClassSummary[] }>('/classes', { signal })
-      .then((response) => response.data.classes),
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { data, loading, error, refetch } = useFetch('classes', classApi.list);
 
   return (
     <div>
@@ -48,12 +47,19 @@ export default function ClassListPage() {
         columns={COLUMNS}
         rows={data ?? []}
         rowKey={(item) => item.id}
+        onRowClick={(item) => setSelectedId(item.id)}
         loading={loading}
         empty={
           error
             ? { title: '반 목록을 불러오지 못했습니다', description: error }
             : { title: '등록된 반이 없습니다', description: '[반 추가]로 첫 반을 만들어 보세요.' }
         }
+      />
+
+      <ClassDetailModal
+        classId={selectedId}
+        onClose={() => setSelectedId(null)}
+        onDeleted={refetch}
       />
     </div>
   );
