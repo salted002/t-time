@@ -130,3 +130,21 @@ export function toUpdatePayload(values: ExamFormValues): ExamUpdatePayload {
     }),
   }
 }
+
+// POST /exams/:examId/copy (API 26)
+export const examCopyFormSchema = z.object({
+  classId: z.string().min(1, '응시반을 선택해 주세요.'),
+  examDate: z
+    .string()
+    .nullable()
+    .refine((v) => !!v, '시험일자를 선택해 주세요.'),
+  name: z.string().trim().min(1, '시험이름을 입력해 주세요.'),
+})
+
+export type ExamCopyFormValues = z.infer<typeof examCopyFormSchema>
+
+export interface ExamCopyPayload {
+  classId: string
+  examDate: string
+  name: string
+}
