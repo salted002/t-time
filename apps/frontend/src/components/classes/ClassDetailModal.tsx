@@ -8,6 +8,7 @@ import { classApi } from '@/api/classApi'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useFetch } from '@/hooks/useFetch'
 import { getErrorMessage } from '@/lib/errors'
+import { ClassFormModal } from '@/components/classes/ClassFormModal'
 
 interface ClassDetailModalProps {
   /** null이면 닫힘 */
@@ -20,6 +21,7 @@ interface ClassDetailModalProps {
 // 반상세모달 (SCR-CLASS-DETAIL). [수정]을 누르면 반수정모달로 바뀐다.
 export function ClassDetailModal({ classId, onClose, onChanged }: ClassDetailModalProps) {
   const confirm = useConfirm()
+  const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const { data, loading, error } = useFetch(
     classId === null ? null : `class:${classId}`,
@@ -50,6 +52,22 @@ export function ClassDetailModal({ classId, onClose, onChanged }: ClassDetailMod
     }
   }
 
+  if (editing && data) {
+    return (
+      <ClassFormModal
+        open
+        onOpenChange={(open) => !open && setEditing(false)}
+        onSaved={() => {
+          onChanged()
+          onClose()
+        }}
+        target={data}
+        onDelete={handleDelete}
+        deleting={deleting}
+      />
+    )
+  }
+
   return (
     <FormDialog
       open={classId !== null}
@@ -57,6 +75,7 @@ export function ClassDetailModal({ classId, onClose, onChanged }: ClassDetailMod
       title={data?.name ?? '반 상세'}
       cancel={false}
       danger={{ label: '삭제', onClick: handleDelete, loading: deleting, disabled: !data }}
+      primary={{ label: '수정', onClick: () => setEditing(true), disabled: !data }}
     >
       {loading && (
         <div className="flex flex-col gap-4">
