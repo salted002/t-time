@@ -7,6 +7,7 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { Stepper } from '@/components/common/Stepper'
 import { CheckList } from '@/components/reports/CheckList'
 import { ReportViewMultiSlide } from '@/components/reports/ReportViewMultiSlide'
+import { SendMultiModal } from '@/components/reports/SendMultiModal'
 import { ResultCardList } from '@/components/reports/build/ResultCardList'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -23,7 +24,7 @@ import { reportApi } from '@/api/reportApi'
 import { useFetch } from '@/hooks/useFetch'
 import { usePreviewQueue } from '@/hooks/usePreviewQueue'
 import { getErrorMessage } from '@/lib/errors'
-import type { BulkReportItem } from '@/types/report'
+import type { BulkReportItem, SavedReport } from '@/types/report'
 
 const STEPS = ['학생 선택', '과목 선택', '생성 확인', '생성 결과']
 
@@ -43,6 +44,7 @@ export default function ReportBuildPage() {
   const [resultCheckedIds, setResultCheckedIds] = useState<string[]>([])
   const [openStudentId, setOpenStudentId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [savedReports, setSavedReports] = useState<SavedReport[] | null>(null)
 
   const queue = usePreviewQueue()
 
@@ -111,7 +113,8 @@ export default function ReportBuildPage() {
   const savedCandidates = queue.items.filter(
     (item) => item.status === 'done' && resultCheckedIds.includes(item.studentId),
   )
-  const hasUnsaved = step === 3 && queue.items.some((item) => item.status === 'done')
+  const hasUnsaved =
+    step === 3 && !savedReports && queue.items.some((item) => item.status === 'done')
 
   // 새로고침·탭 닫기 시 저장하지 않은 리포트가 사라진다는 브라우저 기본 경고
   useEffect(() => {
@@ -134,10 +137,10 @@ export default function ReportBuildPage() {
     try {
       const saved = await reportApi.saveBulk(reports)
       toast.success(`${saved.length}건의 리포트가 저장되었습니다.`)
-      // TODO: 메시지 템플릿 API 준비 후 SMS 발송 모달(SCR-SEND-MULTI)을 여기서 연다. 지금은 목록에서 확인한다.
-      navigate(`/${slug}/reports`)
+      setSavedReports(saved)
     } catch (e) {
       toast.error(getErrorMessage(e, '리포트를 저장하지 못했습니다.'))
+    } finally {
       setSaving(false)
     }
   }
@@ -333,6 +336,9 @@ export default function ReportBuildPage() {
         onTeacherFeedbackChange={queue.setTeacherFeedback}
         onAiFeedbackChange={queue.setAiFeedback}
       />
+      {savedReports && (
+        <SendMultiModal reports={savedReports} onClose={() => navigate(`/${slug}/reports`)} />
+      )}
     </div>
   )
 }
