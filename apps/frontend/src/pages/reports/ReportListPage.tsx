@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { PageHeader } from '@/components/templates/PageHeader'
 import { DataTable, type Column } from '@/components/templates/DataTable'
@@ -47,6 +48,9 @@ const COLUMNS: Column<ReportSummary>[] = [
 
 // 리포트목록페이지 (SCR-REPORT-LIST)
 export default function ReportListPage() {
+  const { slug } = useParams<{ slug: string }>()
+  const navigate = useNavigate()
+
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
 
@@ -62,8 +66,7 @@ export default function ReportListPage() {
         guide="저장된 리포트를 학생 이름으로 검색하고, 공유 링크 상태를 확인할 수 있습니다."
         description="학생별 성적 리포트를 만들고 학부모에게 발송합니다."
         actions={
-          // TODO: 리포트 만들기 화면(SCR-REPORT-BUILD) 연결
-          <Button type="button">
+          <Button type="button" onClick={() => navigate(`/${slug}/reports/new`)}>
             <Plus />
             리포트 만들기
           </Button>
@@ -81,11 +84,11 @@ export default function ReportListPage() {
         />
       </FilterBar>
 
-      {/* TODO: 리포트 상세(SCR-REPORT-DETAIL, P2) 구현 후 onRowClick 연결 */}
       <DataTable
         columns={COLUMNS}
         rows={data?.reports ?? []}
         rowKey={(report) => report.id}
+        onRowClick={(report) => navigate(`/${slug}/reports/${report.id}`)}
         loading={loading}
         empty={
           error

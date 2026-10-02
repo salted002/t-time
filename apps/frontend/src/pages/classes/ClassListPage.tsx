@@ -38,6 +38,7 @@ export default function ClassListPage() {
         description="학원의 반 목록과 반별 학생 수를 확인합니다."
         actions={
           <Button type="button" onClick={() => setCreateOpen(true)}>
+          // TODO: 반 추가 화면 연결
             <Plus />
             반 추가
           </Button>
