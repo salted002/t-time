@@ -18,6 +18,13 @@ export const classApi = {
   create: (payload: { name: string; teacherName: string | null; studentIds: string[] }): Promise<ClassSummary> =>
     api.post<{ class: ClassSummary }>('/classes', payload).then((response) => response.data.class),
 
+  // PATCH /classes/:classId (studentIds는 소속 학생 전체를 대체, 빠진 학생은 반 없음)
+  update: (
+    classId: string,
+    payload: { name: string; teacherName: string | null; studentIds: string[] },
+  ): Promise<ClassSummary> =>
+    api.patch<{ class: ClassSummary }>(`/classes/${classId}`, payload).then((response) => response.data.class),
+
   // DELETE /classes/:classId
   remove: (classId: string) => api.delete(`/classes/${classId}`),
 };

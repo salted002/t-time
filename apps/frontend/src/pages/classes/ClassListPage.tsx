@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/templates/PageHeader';
 import { DataTable, type Column } from '@/components/templates/DataTable';
+import { ClassFormModal } from '@/components/classes/ClassFormModal';
 import { ClassCreateModal } from '@/components/classes/ClassCreateModal';
 import { ClassDetailModal } from '@/components/classes/ClassDetailModal';
 import { Button } from '@/components/ui/button';
@@ -58,11 +59,13 @@ export default function ClassListPage() {
         }
       />
 
+      <ClassFormModal open={createOpen} onOpenChange={setCreateOpen} onSaved={refetch} />
       <ClassCreateModal open={createOpen} onOpenChange={setCreateOpen} onCreated={refetch} />
 
       <ClassDetailModal
         classId={selectedId}
         onClose={() => setSelectedId(null)}
+        onChanged={refetch}
         onDeleted={refetch}
       />
     </div>

@@ -4,6 +4,7 @@ import { FormDialog } from '@/components/common/FormDialog';
 import { InfoGrid } from '@/components/common/InfoGrid';
 import { ChipList } from '@/components/common/ChipList';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ClassFormModal } from '@/components/classes/ClassFormModal';
 import { classApi } from '@/api/classApi';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useFetch } from '@/hooks/useFetch';
@@ -13,6 +14,25 @@ interface ClassDetailModalProps {
   /** null이면 닫힘 */
   classId: string | null;
   onClose: () => void;
+  /** 수정·삭제 후 목록 새로고침용 */
+  onChanged: () => void;
+}
+
+// 반상세모달 (SCR-CLASS-DETAIL). [수정]을 누르면 반수정모달로 바뀐다.
+export function ClassDetailModal({ classId, onClose, onChanged }: ClassDetailModalProps) {
+  const confirm = useConfirm();
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { data, loading, error, refetch } = useFetch(
+    classId === null ? null : `class:${classId}`,
+    (signal) => classApi.get(classId ?? '', signal),
+  );
+
+  const close = () => {
+    setEditing(false);
+    onClose();
+  };
+
   onDeleted: () => void;
 }
 
@@ -39,6 +59,7 @@ export function ClassDetailModal({ classId, onClose, onDeleted }: ClassDetailMod
     try {
       await classApi.remove(data.id);
       toast.success('반이 삭제되었습니다.');
+
       onClose();
       onDeleted();
     } catch (e) {
