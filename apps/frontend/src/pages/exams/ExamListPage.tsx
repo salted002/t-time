@@ -6,13 +6,15 @@ import { DataTable, type Column } from '@/components/templates/DataTable'
 import { FilterBar } from '@/components/common/FilterBar'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { ExamCopyModal } from '@/components/exams/ExamCopyModal'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { EXAM_PAGE_SIZE, useExams } from '@/hooks/useExams'
 import { formatCreatedDate, formatSerial, formatShortDate } from '@/lib/format'
 import type { ExamSummary } from '@/types/exam'
 
 // DataTable 컬럼 key는 행의 속성명이어야 하므로 일련번호도 행 속성으로 붙인다.
-type ExamRow = ExamSummary & { serial: string }
+type ExamRow = ExamSummary & { serial: string; select: string }
 
 const COLUMNS: Column<ExamRow>[] = [
   { key: 'serial', header: '번호', className: 'w-24 tabular-nums' },
@@ -34,6 +36,9 @@ export default function ExamListPage() {
 
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [copyMode, setCopyMode] = useState(false)
+  const [selected, setSelected] = useState<ExamSummary | null>(null)
+  const [copyOpen, setCopyOpen] = useState(false)
 
   const debouncedSearch = useDebouncedValue(search.trim())
   const { data, latestData, loading, error } = useExams({ q: debouncedSearch, page })
@@ -44,7 +49,31 @@ export default function ExamListPage() {
   const rows: ExamRow[] = (data?.exams ?? []).map((exam, index) => ({
     ...exam,
     serial: formatSerial(count, page, EXAM_PAGE_SIZE, index),
+    select: '',
   }))
+
+  const exitCopyMode = () => {
+    setCopyMode(false)
+    setSelected(null)
+  }
+
+  const columns: Column<ExamRow>[] = copyMode
+    ? [
+        {
+          key: 'select',
+          header: '',
+          className: 'w-10',
+          cell: (exam) => (
+            <Checkbox
+              checked={selected?.id === exam.id}
+              className="pointer-events-none"
+              aria-label={`${exam.name} 선택`}
+            />
+          ),
+        },
+        ...COLUMNS,
+      ]
+    : COLUMNS
 
   return (
     <div>
@@ -53,15 +82,26 @@ export default function ExamListPage() {
         guide="시험 이름으로 검색하고, 시험을 눌러 성적과 통계를 확인할 수 있습니다."
         description="반별 시험을 만들고 성적을 입력·관리합니다."
         actions={
-          <>
-            <Button type="button" variant="outline">
-              시험 복사
-            </Button>
-            <Button type="button" onClick={() => navigate(`/${slug}/exams/new`)}>
-              <Plus />
-              시험 추가
-            </Button>
-          </>
+          copyMode ? (
+            <>
+              <Button type="button" variant="outline" onClick={exitCopyMode}>
+                취소
+              </Button>
+              <Button type="button" disabled={!selected} onClick={() => setCopyOpen(true)}>
+                선택한 시험 복사
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button type="button" variant="outline" onClick={() => setCopyMode(true)}>
+                시험 복사
+              </Button>
+              <Button type="button" onClick={() => navigate(`/${slug}/exams/new`)}>
+                <Plus />
+                시험 추가
+              </Button>
+            </>
+          )
         }
       />
 
@@ -77,10 +117,14 @@ export default function ExamListPage() {
       </FilterBar>
 
       <DataTable
-        columns={COLUMNS}
+        columns={columns}
         rows={rows}
         rowKey={(exam) => exam.id}
-        onRowClick={(exam) => navigate(`/${slug}/exams/${exam.id}`)}
+        onRowClick={(exam) =>
+          copyMode
+            ? setSelected((prev) => (prev?.id === exam.id ? null : exam))
+            : navigate(`/${slug}/exams/${exam.id}`)
+        }
         loading={loading}
         empty={
           error
@@ -95,6 +139,14 @@ export default function ExamListPage() {
           onPageChange: setPage,
         }}
       />
+
+      {copyOpen && selected && (
+        <ExamCopyModal
+          exam={selected}
+          onClose={() => setCopyOpen(false)}
+          onCopied={(newId) => navigate(`/${slug}/exams/${newId}/results`)}
+        />
+      )}
     </div>
   )
 }

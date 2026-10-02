@@ -594,4 +594,32 @@ async function remove({ academyId, examId }) {
   return deleted
 }
 
-module.exports = { list, create, getById, saveResults, update, updateParticipantComment, remove }
+async function copy({ academyId, examId, classId, examDate, name }) {
+  const source = await db.Exam.findOne({
+    where: { id: examId, academyId },
+    include: [{ model: db.ExamSubject }, { model: db.ExamGrade }],
+  })
+  if (!source) throwError(404, '시험을 찾을 수 없습니다.')
+
+  return create({
+    academyId,
+    examDate,
+    classId,
+    name,
+    evalType: source.evalType,
+    subjects: source.ExamSubjects.map((s) => ({ name: s.name, maxScore: s.maxScore })),
+    grades: source.ExamGrades.sort((a, b) => a.order - b.order).map((g) => g.label),
+    memo: null,
+  })
+}
+
+module.exports = {
+  list,
+  create,
+  getById,
+  saveResults,
+  update,
+  updateParticipantComment,
+  remove,
+  copy,
+}
