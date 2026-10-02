@@ -13,6 +13,7 @@ const messageLogRouter = require('./routes/messageLogRoutes')
 const errorHandler = require('./middlewares/errorHandler')
 const shareRouter = require('./routes/shareRoutes')
 const templateRouter = require('./routes/templateRoutes')
+const adminRouter = require('./routes/admin');
 
 // 허용할 프론트 origin (쉼표로 여러 개 가능). 기본값은 Vite 개발 서버
 const allowedOrigins = (process.env.FRONTEND_BASE_URL || 'http://localhost:5173')
@@ -35,6 +36,7 @@ app.use('/share', shareRouter)
 app.use('/message-logs', messageLogRouter)
 app.use('/templates', templateRouter)
 app.use('/classes', classRouter)
+app.use('/admin', adminRouter);
 
 // 에러 처리 미들웨어를 마지막에 등록해야 함
 app.use(errorHandler)
