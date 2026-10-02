@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/templates/PageHeader';
 import { DataTable, type Column } from '@/components/templates/DataTable';
@@ -48,6 +49,8 @@ const COLUMNS: Column<Student>[] = [
 ];
 
 export default function StudentListPage() {
+  const navigate = useNavigate();
+  const { slug } = useParams();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StudentStatus | 'all'>('all');
   const [classFilter, setClassFilter] = useState<string>('all');
@@ -143,6 +146,7 @@ export default function StudentListPage() {
         columns={COLUMNS}
         rows={students}
         rowKey={(student) => student.id}
+        onRowClick={(student) => navigate(`/${slug}/students/${student.id}`)}
         loading={loading}
         empty={
           error
