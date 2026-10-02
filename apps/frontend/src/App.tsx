@@ -21,6 +21,7 @@ import ExamDetailPage from './pages/exams/ExamDetailPage'
 import ExamResultFormPage from './pages/exams/ExamResultFormPage'
 import ReportListPage from '@/pages/reports/ReportListPage'
 import ReportBuildPage from '@/pages/reports/ReportBuildPage'
+import ReportDetailPage from '@/pages/reports/ReportDetailPage'
 import SharedReportPage from '@/pages/share/SharedReportPage'
 import StudentExamDetailPage from '@/pages/students/StudentExamDetailPage'
 import TemplateListPage from '@/pages/messages/TemplateListPage'
@@ -59,6 +60,7 @@ function App() {
             <Route path="exams/:examId/results" element={<ExamResultFormPage />} />
             <Route path="reports" element={<ReportListPage />} />
             <Route path="reports/new" element={<ReportBuildPage />} />
+            <Route path="reports/:reportId" element={<ReportDetailPage />} />
             <Route path="templates" element={<TemplateListPage />} />
 
             <Route path="settings" element={<AcademySettingsPage />} />

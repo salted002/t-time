@@ -84,11 +84,11 @@ export default function ReportListPage() {
         />
       </FilterBar>
 
-      {/* TODO: 리포트 상세(SCR-REPORT-DETAIL, P2) 구현 후 onRowClick 연결 */}
       <DataTable
         columns={COLUMNS}
         rows={data?.reports ?? []}
         rowKey={(report) => report.id}
+        onRowClick={(report) => navigate(`/${slug}/reports/${report.id}`)}
         loading={loading}
         empty={
           error
