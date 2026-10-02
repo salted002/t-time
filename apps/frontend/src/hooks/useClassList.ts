@@ -1,12 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-
-export interface ClassSummary {
-  id: string;
-  name: string;
-  teacherName: string | null;
-  studentCount: number;
-}
+import type { ClassSummary } from '@/types/class';
 
 interface ClassListResponse {
   classes: ClassSummary[];

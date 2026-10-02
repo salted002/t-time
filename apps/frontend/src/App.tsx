@@ -22,6 +22,11 @@ import ExamResultFormPage from './pages/exams/ExamResultFormPage'
 import ReportListPage from '@/pages/reports/ReportListPage'
 import ClassListPage from '@/pages/classes/ClassListPage'
 import MessageLogListPage from '@/pages/message-logs/MessageLogListPage'
+import ReportBuildPage from '@/pages/reports/ReportBuildPage'
+import ReportDetailPage from '@/pages/reports/ReportDetailPage'
+import SharedReportPage from '@/pages/share/SharedReportPage'
+import StudentExamDetailPage from '@/pages/students/StudentExamDetailPage'
+import TemplateListPage from '@/pages/messages/TemplateListPage'
 
 function App() {
   return (
@@ -48,7 +53,9 @@ function App() {
           >
             <Route index element={<Navigate to="students" replace />} />
             <Route path="students" element={<StudentListPage />} />
+            <Route path="students/new" element={<StudentListPage />} />
             <Route path="students/:studentId" element={<StudentDetailPage />} />
+            <Route path="students/:studentId/exams/:examId" element={<StudentExamDetailPage />} />
             <Route path="exams" element={<ExamListPage />} />
             <Route path="exams/new" element={<ExamFormPage />} />
             <Route path="exams/:examId" element={<ExamDetailPage />} />
@@ -57,9 +64,16 @@ function App() {
             <Route path="reports" element={<ReportListPage />} />
             <Route path="classes" element={<ClassListPage />} />
             <Route path="message-logs" element={<MessageLogListPage />} />
+            <Route path="reports/new" element={<ReportBuildPage />} />
+            <Route path="reports/:reportId" element={<ReportDetailPage />} />
+            <Route path="templates" element={<TemplateListPage />} />
+
             <Route path="settings" element={<AcademySettingsPage />} />
             <Route path="settings/password" element={<PasswordChangePage />} />
           </Route>
+
+          {/* 학부모 리포트 공유용 페이지 링크 (링크만 있으면 누구나 접속 가능) */}
+          <Route path="/share/:token" element={<SharedReportPage />} />
 
           {import.meta.env.DEV && <Route path="/dev/components" element={<ComponentsPage />} />}
 
