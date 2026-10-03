@@ -6,6 +6,7 @@ import { SectionCard } from '@/components/common/SectionCard'
 import { InfoGrid } from '@/components/common/InfoGrid'
 import { ChipList } from '@/components/common/ChipList'
 import { ExamResultTable } from '@/components/exams/ExamResultTable'
+import { ExamCopyModal } from '@/components/exams/ExamCopyModal'
 import { ScoreTrendChart } from '@/components/charts/ScoreTrendChart'
 import { GradeDistributionChart } from '@/components/charts/GradeDistributionChart'
 import { Button } from '@/components/ui/button'
@@ -25,6 +26,7 @@ export default function ExamDetailPage() {
 
   const { data: exam, loading, error } = useExam(examId ?? null)
   const [deleting, setDeleting] = useState(false)
+  const [copyOpen, setCopyOpen] = useState(false)
 
   const listPath = `/${slug}/exams`
 
@@ -105,13 +107,22 @@ export default function ExamDetailPage() {
         guide="시험 정보와 응시자별 성적, 반 통계를 확인합니다. 성적과 시험 정보는 각 영역의 [수정] 버튼으로 고칩니다."
         back={{ label: '시험 목록으로', to: listPath }}
         actions={
-          <Button type="button" variant="destructive" onClick={handleDelete} disabled={deleting}>
-            시험 삭제하기
-          </Button>
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCopyOpen(true)}
+              disabled={deleting}
+            >
+              이 시험 복사하기
+            </Button>
+            <Button type="button" variant="destructive" onClick={handleDelete} disabled={deleting}>
+              시험 삭제하기
+            </Button>
+          </>
         }
       />
 
-      {/* TODO: 시험 수정 화면 연결 */}
       <SectionCard
         title="시험 정보"
         actions={
@@ -128,7 +139,6 @@ export default function ExamDetailPage() {
         <InfoGrid items={infoItems} />
       </SectionCard>
 
-      {/* TODO: 성적 입력·수정 화면 연결 */}
       <SectionCard
         title="시험 결과"
         description={`응시 ${exam.participants.length}명`}
@@ -186,12 +196,13 @@ export default function ExamDetailPage() {
         </div>
       )}
 
-      {/* TODO: 시험 복사 모달 + 복사 API(26) 연결 */}
-      <div className="flex justify-end">
-        <Button type="button" variant="outline">
-          이 시험 복사하기
-        </Button>
-      </div>
+      {copyOpen && (
+        <ExamCopyModal
+          exam={exam}
+          onClose={() => setCopyOpen(false)}
+          onCopied={(newId) => navigate(`${listPath}/${newId}/results`)}
+        />
+      )}
     </div>
   )
 }
