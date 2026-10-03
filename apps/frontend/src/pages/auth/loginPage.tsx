@@ -4,7 +4,6 @@ import type { FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
 import { Link, useNavigate } from 'react-router-dom'
-import { Check } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +20,7 @@ import { LOGIN_FIELD_ORDER, loginSchema } from '@/types/auth'
 import type { LoginFormValues } from '@/types/auth'
 import { DEMO_ACCOUNT } from '@/lib/constants'
 import { FormField } from '@/components/common/FormField'
+import { BrandMark } from '@/components/common/BrandMark'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -79,12 +79,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
       <div className="hidden flex-1 flex-col justify-center bg-[#2C4F41] px-16 py-20 lg:flex">
-        <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[#F3F1E9]">
-            <Check className="h-4 w-4 text-[#2C4F41]" />
-          </span>
-          <span className="text-lg font-bold text-white">티타임</span>
-        </div>
+        <BrandMark textClassName="text-white" />
         <h1 className="mt-16 text-4xl font-bold leading-tight text-white">
           학원 운영을
           <br />
