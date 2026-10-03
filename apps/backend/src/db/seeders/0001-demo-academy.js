@@ -1081,7 +1081,7 @@ async function up(queryInterface) {
     .slice(0, 6)
     .forEach((s) => reportTargets.push(s))
 
-  reportTargets.forEach((student, i) => {
+  reportTargets.forEach((student) => {
     const cls = classById.get(student.classId)
     const lv = LEVELS[cls.level]
     // 리포트 생성일: 8/25 ~ 10/2 (최근일수록 많이)
