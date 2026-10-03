@@ -24,7 +24,7 @@ import { examCopyFormSchema, type ExamCopyFormValues } from '@/types/examForm'
 const FORM_ID = 'exam-copy-form'
 
 interface ExamCopyModalProps {
-  exam: ExamSummary
+  exam: Pick<ExamSummary, 'id' | 'name'>
   onClose: () => void
   onCopied: (newExamId: string) => void
 }
