@@ -1,46 +1,13 @@
-import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import { useContext } from 'react'
+import { AuthMeContext } from '@/context/AuthMeContext'
 
-export interface AuthMe {
-  user: { id: string; name: string; email: string };
-  academy: {
-    id: string;
-    name: string;
-    slug: string;
-    logoUrl: string | null;
-    phone: string | null;
-    address: string | null;
-    smsSenderNumber: string | null;
-    subscriptionStatus: 'FREE' | 'SUBSCRIBED';
-  };
-  isDemo: boolean;
-}
+// AcademyProfileDropdown 등 기존 import가 깨지지 않게 타입을 다시 내보낸다.
+export type { AuthMe } from '@/types/authMe'
 
 export function useAuthMe() {
-  const [me, setMe] = useState<AuthMe | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let ignore = false;
-
-    api
-      .get<AuthMe>('/auth/me')
-      .then((response) => {
-        if (!ignore) {
-          const { user, academy, isDemo } = response.data;
-          setMe({ user, academy, isDemo });
-        }
-      })
-      // 실패하면 me는 null로 두고, 화면은 로그인 시 저장한 사용자 정보로 대신 표시
-      .catch(() => {})
-      .finally(() => {
-        if (!ignore) setLoading(false);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  return { me, loading };
+  const ctx = useContext(AuthMeContext)
+  if (!ctx) {
+    throw new Error('useAuthMe는 AuthMeProvider 안에서만 쓸 수 있습니다')
+  }
+  return ctx
 }
