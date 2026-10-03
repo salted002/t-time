@@ -1,6 +1,30 @@
-// TODO: 실제 AI API(OpenAI/Claude API 등) 연동 확정되면 이 파일만 고치면 됨.
-// 지금은 aiFeedbackService를 부르는 쪽(reportService)이 인터페이스만 믿고 짜여있어서,
-// 나중에 실제 연동해도 reportService 코드는 손댈 필요가 없음.
+const OpenAI = require('openai')
+const env = require('../config/env')
+
+const client = new OpenAI({
+  apiKey: env.ai.apiKey,
+  baseURL: `${env.ai.endpoint.replace(/\/$/, '')}/openai/v1/`,
+  timeout: 25000, // 25초 안에 응답이 없으면 실패 처리
+})
+
+async function callAi({ system, user, maxTokens }) {
+  try {
+    const res = await client.chat.completions.create({
+      model: env.ai.deployment, // 모델명이 아니라 '배포 이름'
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+      max_completion_tokens: maxTokens,
+    })
+    return res.choices[0].message.content.trim()
+  } catch (err) {
+    console.error('[AI 호출 실패]', err.status, err.message) // 원인은 서버 로그에만 남김
+    const error = new Error('AI 피드백 생성에 실패했습니다.')
+    error.statusCode = 502
+    throw error
+  }
+}
 
 /**
  * 과목 하나에 대한 AI 피드백을 생성한다. (REQ-REPORT-03: 과목명별 맞춤 프롬프트)
@@ -23,4 +47,4 @@ async function generateOverallFeedback({ studentName, subjectFeedbacks }) {
   return `[AI 생성 예정] ${studentName} 학생의 전체 시험 피드백입니다. (과목 ${subjectCount}개 종합)`
 }
 
-module.exports = { generateSubjectFeedback, generateOverallFeedback }
+module.exports = { callAi, generateSubjectFeedback, generateOverallFeedback }

@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config()
 
 const config = {
   port: parseInt(process.env.PORT || '4000', 10),
@@ -13,6 +13,11 @@ const config = {
     apiKey: process.env.COOLSMS_API_KEY || '',
     apiSecret: process.env.COOLSMS_API_SECRET || '',
   },
-};
+  ai: {
+    endpoint: process.env.AZURE_OPENAI_ENDPOINT || '',
+    apiKey: process.env.AZURE_OPENAI_API_KEY || '',
+    deployment: process.env.AZURE_OPENAI_DEPLOYMENT || '',
+  },
+}
 
-module.exports = config;
+module.exports = config
