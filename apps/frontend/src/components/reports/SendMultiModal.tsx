@@ -23,6 +23,7 @@ import { getErrorMessage } from '@/lib/errors'
 import { getDefaultDraft, isValidSmsMessage, isValidSmsPhone } from '@/lib/smsTemplate'
 import type { SmsDraft } from '@/types/reportSend'
 import type { SavedReport } from '@/types/report'
+import { formatFullDate } from '@/lib/format'
 
 interface RowEdit {
   phone?: string
@@ -55,6 +56,7 @@ export function SendMultiModal({ reports, onClose }: SendMultiModalProps) {
     phone: edits[report.id]?.phone ?? report.parentPhone,
     draft: edits[report.id]?.draft ?? getDefaultDraft(templates ?? [], report.studentName),
     link: report.shareLink.url,
+    expiresAt: report.shareLink.expiresAt,
   }))
 
   const pending = rows.filter((row) => !sentIds.includes(row.report.id))
@@ -150,7 +152,11 @@ export function SendMultiModal({ reports, onClose }: SendMultiModalProps) {
       open
       onOpenChange={(open) => !open && requestClose()}
       title="리포트 링크 발송"
-      description="메시지 오른쪽 연필 버튼으로 학생별 메시지를 수정할 수 있습니다."
+      description={
+        reports[0]
+          ? `링크 만료: ${formatFullDate(reports[0].shareLink.expiresAt)} · 메시지 오른쪽 연필 버튼으로 학생별 메시지를 수정할 수 있습니다.`
+          : '메시지 오른쪽 연필 버튼으로 학생별 메시지를 수정할 수 있습니다.'
+      }
       size="lg"
       cancel={pending.length === 0 ? '닫기' : '취소'}
       primary={{
@@ -257,6 +263,7 @@ export function SendMultiModal({ reports, onClose }: SendMultiModalProps) {
                               draft={buffer}
                               onChange={setBuffer}
                               link={row.link}
+                              expiresAt={row.expiresAt}
                               onManageTemplates={goToTemplates}
                             />
                             <div className="flex justify-end gap-2">

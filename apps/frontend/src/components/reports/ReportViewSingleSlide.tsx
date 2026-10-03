@@ -168,6 +168,7 @@ export function ReportViewSingleSlide({
           defaultPhone={student?.parentPhone ?? ''}
           examName={examName}
           link={shareLink.url}
+          expiresAt={shareLink.expiresAt}
           onClose={() => setSendOpen(false)}
           onSent={() => setSent(true)}
         />

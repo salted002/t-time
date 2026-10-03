@@ -16,6 +16,8 @@ interface SendSingleModalProps {
   defaultPhone: string
   examName?: string
   link: string
+  /** 링크 만료 시각 (ISO 8601) */
+  expiresAt: string
   onClose: () => void
   onSent: () => void
 }
@@ -28,6 +30,7 @@ export function SendSingleModal({
   defaultPhone,
   examName,
   link,
+  expiresAt,
   onClose,
   onSent,
 }: SendSingleModalProps) {
@@ -105,6 +108,7 @@ export function SendSingleModal({
               draft={draft}
               onChange={setDraftInput}
               link={link}
+              expiresAt={expiresAt}
               disabled={sending}
             />
           </>
