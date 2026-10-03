@@ -26,25 +26,44 @@ async function callAi({ system, user, maxTokens }) {
   }
 }
 
+// 임시 프롬프트 : 과목별
+const SUBJECT_SYSTEM_PROMPT = `당신은 학원 선생님이 학부모에게 보낼 성적 피드백 초안을 쓰도록 돕는 보조자입니다.
+규칙:
+- 존댓말로, 따뜻하지만 구체적으로 2~3문장만 씁니다.
+- 제공된 점수와 추이(상승/하락/유지)만 근거로 쓰고, 없는 수치나 사실을 지어내지 않습니다.
+- 만점 기준을 알 수 없으므로 점수가 높다/낮다고 단정하지 말고, 변화 흐름을 중심으로 씁니다.
+- 학생 이름은 쓰지 말고 "학생"이라고 지칭합니다.
+- 비난하거나 과장하지 않고, 개선할 점은 격려하는 어조로 제안합니다.`
+
+// 임시 프롬프트 : 종합
+const OVERALL_SYSTEM_PROMPT = `당신은 학원 선생님이 참고할 시험 전체 피드백 요약을 쓰도록 돕는 보조자입니다.
+과목별 피드백들을 종합해서 3~4문장으로 학생의 전반적인 강점과 보완점을 정리합니다.
+규칙: 존댓말, 과목별 피드백에 없는 내용을 지어내지 않기, 학생 이름은 쓰지 않고 "학생"이라고 지칭하기.`
+
 /**
  * 과목 하나에 대한 AI 피드백을 생성한다. (REQ-REPORT-03: 과목명별 맞춤 프롬프트)
  * subjectName: 과목명 (예: '문법')
  * trendHistory: [{ examId, examDate, score }] — 이 과목의 최근 점수 추이 (프롬프트 재료)
  */
 async function generateSubjectFeedback({ subjectName, trendHistory }) {
-  // TODO: 실제로는 여기서 trendHistory를 프롬프트에 넣어 AI API를 호출한다.
-  const latest = trendHistory[trendHistory.length - 1]
-  return `[AI 생성 예정] ${subjectName} 과목은 최근 점수 ${latest ? latest.score : '없음'}점 기준으로 피드백이 생성됩니다.`
+  // 점수 기록이 없으면 AI를 부르지 않는다. (비용 절약 + 지어내기 방지)
+  if (!trendHistory || trendHistory.length === 0) {
+    return `${subjectName} 과목은 아직 비교할 수 있는 점수 기록이 부족합니다.`
+  }
+
+  const lines = trendHistory.map((entry) => `- ${entry.examDate}: ${entry.score}점`).join('\n')
+  const user = `과목: ${subjectName}\n최근 점수 추이 (오래된 순):\n${lines}`
+
+  return callAi({ system: SUBJECT_SYSTEM_PROMPT, user, maxTokens: 300 })
 }
 
-/**
- * 시험 전체에 대한 AI 피드백을 생성한다. (선생님 참고용, 리포트에는 포함 안 됨)
- * subjectFeedbacks: { 과목명: 피드백 } — 과목별 피드백을 종합 재료로 사용
- */
-async function generateOverallFeedback({ studentName, subjectFeedbacks }) {
-  // TODO: 실제로는 subjectFeedbacks를 종합해 AI API를 호출한다.
-  const subjectCount = Object.keys(subjectFeedbacks).length
-  return `[AI 생성 예정] ${studentName} 학생의 전체 시험 피드백입니다. (과목 ${subjectCount}개 종합)`
+// studentName은 인터페이스 호환을 위해 받지만, 개인정보 보호를 위해 프롬프트에는 넣지 않는다.
+async function generateOverallFeedback({ subjectFeedbacks }) {
+  const lines = Object.entries(subjectFeedbacks)
+    .map(([subjectName, feedback]) => `[${subjectName}] ${feedback}`)
+    .join('\n')
+
+  return callAi({ system: OVERALL_SYSTEM_PROMPT, user: lines, maxTokens: 500 })
 }
 
-module.exports = { callAi, generateSubjectFeedback, generateOverallFeedback }
+module.exports = { generateSubjectFeedback, generateOverallFeedback }
