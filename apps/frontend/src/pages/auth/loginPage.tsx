@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { LOGIN_FIELD_ORDER, loginSchema } from '@/types/auth'
 import type { LoginFormValues } from '@/types/auth'
+import { DEMO_ACCOUNT } from '@/lib/constants'
 import { FormField } from '@/components/common/FormField'
 
 export default function LoginPage() {
@@ -40,6 +41,28 @@ export default function LoginPage() {
       setErrorPopup({ title: '입력 확인이 필요합니다', messages })
     }
   }
+  const showLoginError = (error: unknown) => {
+    const message = axios.isAxiosError(error)
+      ? (error.response?.data as { message?: string } | undefined)?.message
+      : undefined
+    setErrorPopup({
+      title: '로그인에 실패했습니다',
+      messages: [message ?? '이메일 또는 비밀번호를 확인해주세요.'],
+    })
+  }
+
+  const handleDemoLogin = async () => {
+    setIsSubmitting(true)
+    try {
+      // 데모 체험은 브라우저를 닫으면 세션이 끝나도록 rememberMe를 끈다.
+      const demoUser = await login(DEMO_ACCOUNT.email, DEMO_ACCOUNT.password, false)
+      navigate(`/${demoUser.academySlug}/students`)
+    } catch (error) {
+      showLoginError(error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   const onSubmit = handleSubmit(async (data) => {
     setIsSubmitting(true)
@@ -47,13 +70,7 @@ export default function LoginPage() {
       const loggedInUser = await login(data.email, data.password, data.rememberMe)
       navigate(`/${loggedInUser.academySlug}/students`)
     } catch (error) {
-      const message = axios.isAxiosError(error)
-        ? (error.response?.data as { message?: string } | undefined)?.message
-        : undefined
-      setErrorPopup({
-        title: '로그인에 실패했습니다',
-        messages: [message ?? '이메일 또는 비밀번호를 확인해주세요.'],
-      })
+      showLoginError(error)
     } finally {
       setIsSubmitting(false)
     }
@@ -92,6 +109,7 @@ export default function LoginPage() {
             {(field) => <Input {...field} type="password" />}
           </FormField>
 
+          {/* 로그인 버튼 (로딩 구현) */}
           <Button type="submit" disabled={isSubmitting} className="w-full">
             {isSubmitting ? '로그인 중...' : '로그인'}
           </Button>
@@ -102,8 +120,14 @@ export default function LoginPage() {
             <div className="h-px flex-1 bg-border" />
           </div>
 
-          {/* TODO(REQ-ACC-05): 데모 계정 로그인 연동 — 백엔드 DEMO_ACCOUNT_EMAIL/시더 준비되면 연결 */}
-          <Button type="button" variant="outline" className="w-full">
+          {/* 데모 계정 로그인 */}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={isSubmitting}
+            onClick={handleDemoLogin}
+          >
             데모 계정으로 둘러보기
           </Button>
 
