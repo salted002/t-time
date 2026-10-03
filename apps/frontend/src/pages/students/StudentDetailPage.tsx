@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StudentExamTab } from '@/components/students/StudentExamTab'
 import { StudentEditForm, type StudentEditValues } from '@/components/students/StudentEditForm'
+import { StudentCounselingTab } from '@/components/students/StudentCounselingTab'
 import { studentApi } from '@/api/studentApi'
 import { useConfirm } from '@/hooks/useConfirm'
 import { useStudentDetail } from '@/hooks/useStudentDetail'
@@ -187,11 +188,7 @@ export default function StudentDetailPage() {
       </TabsContent>
 
       <TabsContent value="counselings">
-        <SectionCard>
-          <p className="py-10 text-center text-sm text-muted-foreground">
-            상담 탭은 준비 중입니다.
-          </p>
-        </SectionCard>
+        {studentId && <StudentCounselingTab studentId={studentId} />}
       </TabsContent>
     </Tabs>
   )
