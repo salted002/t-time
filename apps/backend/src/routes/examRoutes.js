@@ -8,7 +8,6 @@ router.post('/', authenticateAcademy, examController.create)
 router.post('/:examId/copy', authenticateAcademy, examController.copy)
 router.get('/:examId', authenticateAcademy, examController.getById)
 router.put('/:examId/results', authenticateAcademy, examController.saveResults)
-router.post('/:examId/copy', authenticateAcademy, examController.copy)
 router.patch('/:examId', authenticateAcademy, examController.update)
 router.patch(
   '/:examId/participants/:participantId',

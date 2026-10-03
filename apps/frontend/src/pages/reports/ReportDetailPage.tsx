@@ -272,6 +272,7 @@ function ReportDetailView({ report, backPath }: ReportDetailViewProps) {
           studentName={report.studentName}
           defaultPhone={student?.parentPhone ?? ''}
           link={link.url}
+          expiresAt={link.expiresAt}
           onClose={() => setSendOpen(false)}
           onSent={() => undefined}
         />

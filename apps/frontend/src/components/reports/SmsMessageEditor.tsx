@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { formatFullDate } from '@/lib/format'
 import { useConfirm } from '@/hooks/useConfirm'
 import { SMS_MAX_BYTES, SMS_SHORT_BYTES, getSmsBytes, renderSmsTemplate } from '@/lib/smsTemplate'
 import type { SmsDraft } from '@/types/reportSend'
@@ -19,6 +20,7 @@ interface SmsMessageEditorProps {
   draft: SmsDraft
   onChange: (draft: SmsDraft) => void
   link: string
+  expiresAt: string
   disabled?: boolean
   onManageTemplates?: () => void
 }
@@ -30,6 +32,7 @@ export function SmsMessageEditor({
   draft,
   onChange,
   link,
+  expiresAt,
   disabled,
   onManageTemplates,
 }: SmsMessageEditorProps) {
@@ -109,7 +112,9 @@ export function SmsMessageEditor({
         <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
           <Lock className="size-3.5 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1 truncate">{link}</span>
-          <span className="shrink-0 text-xs text-muted-foreground">(삭제불가)</span>
+          <span className="shrink-0 text-xs text-muted-foreground">
+            {formatFullDate(expiresAt)}까지 유효 · 삭제불가
+          </span>
         </div>
         <p
           className={
