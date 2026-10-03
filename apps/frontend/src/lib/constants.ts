@@ -20,6 +20,6 @@ export const EVAL_TYPE_LABEL = {
 
 // 데모 계정 (시더 0001-demo-academy.js의 계정과 같아야 한다)
 export const DEMO_ACCOUNT = {
-  email: 'admin@hanbit.kr',
+  email: 'admin@tomato.kr',
   password: 'Ttime1234!',
 } as const
