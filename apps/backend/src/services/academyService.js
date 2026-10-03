@@ -139,6 +139,8 @@ async function updateAcademy(academyId, updateData, file) {
     if (!academy) throwError(404, '학원을 찾을 수 없습니다.')
 
     if (slug && slug !== academy.slug) {
+      if (academy.isDemo) throwError(403, '데모 계정에서는 학원 슬러그를 변경할 수 없습니다.')
+
       const existingSlug = await db.Academy.findOne({ where: { slug, deletedAt: null } })
       if (existingSlug) throwError(409, '이미 사용 중인 슬러그입니다.')
     }
