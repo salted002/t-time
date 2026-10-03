@@ -1,29 +1,46 @@
-import { Link, Navigate } from 'react-router-dom';
-import { BarChart3, Check, FileText, MessageSquareText, Users } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
+import { Link, Navigate } from 'react-router-dom'
+import { BarChart3, FileText, MessageSquareText, Users } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import { Button } from '@/components/ui/button'
+import { BrandMark } from '@/components/common/BrandMark'
 
 // SCR-LANDING 서비스 소개 페이지 (로그인 상태면 학원 메인으로 즉시 이동)
 
 interface Feature {
-  icon: LucideIcon;
-  title: string;
-  description: string;
+  icon: LucideIcon
+  title: string
+  description: string
 }
 
 const FEATURES: Feature[] = [
-  { icon: Users, title: '학생·반 관리', description: '재원·휴원·퇴원 학생과 반 배정을 한 목록에서 관리해요.' },
-  { icon: FileText, title: '시험·성적', description: '시험을 만들고 과목별 점수와 등급을 입력해요.' },
-  { icon: BarChart3, title: '성적 리포트', description: '최근 시험 추이를 담은 리포트를 링크로 공유해요.' },
-  { icon: MessageSquareText, title: '학부모 문자', description: '리포트 링크와 안내 문자를 학부모에게 바로 보내요.' },
-];
+  {
+    icon: Users,
+    title: '학생·반 관리',
+    description: '재원·휴원·퇴원 학생과 반 배정을 한 목록에서 관리해요.',
+  },
+  {
+    icon: FileText,
+    title: '시험·성적',
+    description: '시험을 만들고 과목별 점수와 등급을 입력해요.',
+  },
+  {
+    icon: BarChart3,
+    title: '성적 리포트',
+    description: '최근 시험 추이를 담은 리포트를 링크로 공유해요.',
+  },
+  {
+    icon: MessageSquareText,
+    title: '학부모 문자',
+    description: '리포트 링크와 안내 문자를 학부모에게 바로 보내요.',
+  },
+]
 
 export default function LandingPage() {
-  const { user } = useAuth();
+  const { user } = useAuth()
 
   if (user) {
-    return <Navigate to={`/${user.academySlug}/`} replace />;
+    return <Navigate to={`/${user.academySlug}/`} replace />
   }
 
   return (
@@ -64,7 +81,10 @@ export default function LandingPage() {
 
         <section className="grid gap-4 px-6 pb-20 sm:grid-cols-2 md:px-12 lg:grid-cols-4">
           {FEATURES.map(({ icon: Icon, title, description }) => (
-            <div key={title} className="flex flex-col gap-3 rounded-lg border border-border bg-card p-6">
+            <div
+              key={title}
+              className="flex flex-col gap-3 rounded-lg border border-border bg-card p-6"
+            >
               <span className="flex size-10 items-center justify-center rounded-md bg-brand-soft text-brand-soft-foreground">
                 <Icon className="size-5" />
               </span>
@@ -79,16 +99,9 @@ export default function LandingPage() {
         © 티타임
       </footer>
     </div>
-  );
+  )
 }
 
 function Logo() {
-  return (
-    <span className="flex items-center gap-2">
-      <span className="flex size-8 items-center justify-center rounded-md bg-brand">
-        <Check className="size-4 text-brand-foreground" />
-      </span>
-      <span className="text-lg font-bold">티타임</span>
-    </span>
-  );
+  return <BrandMark />
 }
