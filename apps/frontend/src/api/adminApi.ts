@@ -1,59 +1,60 @@
-import axios from 'axios';
+import axios from 'axios'
+import { API_BASE_URL } from '@/lib/apiBase'
 
-const ADMIN_TOKEN_KEY = 'ttime_admin_token';
+const ADMIN_TOKEN_KEY = 'ttime_admin_token'
 
 // 학원 계정 토큰(ttime_token)과 섞이지 않도록 운영자 토큰은 별도 키·별도 axios 인스턴스를 쓴다.
 export function getAdminToken(): string | null {
-  return sessionStorage.getItem(ADMIN_TOKEN_KEY);
+  return sessionStorage.getItem(ADMIN_TOKEN_KEY)
 }
 
 export function setAdminToken(token: string): void {
-  sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
+  sessionStorage.setItem(ADMIN_TOKEN_KEY, token)
 }
 
 export function clearAdminToken(): void {
-  sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+  sessionStorage.removeItem(ADMIN_TOKEN_KEY)
 }
 
 export const adminHttp = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-});
+  baseURL: API_BASE_URL,
+})
 
 adminHttp.interceptors.request.use((config) => {
-  const token = getAdminToken();
+  const token = getAdminToken()
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`
   }
-  return config;
-});
+  return config
+})
 
 adminHttp.interceptors.response.use(
   (response) => response,
   (error) => {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
-      clearAdminToken();
+      clearAdminToken()
     }
-    return Promise.reject(error);
+    return Promise.reject(error)
   },
-);
+)
 
 export interface AdminAcademy {
-  id: string;
-  name: string;
-  phone: string | null;
-  ownerName: string | null;
-  studentCount: number;
-  loginEmail: string | null;
+  id: string
+  name: string
+  phone: string | null
+  ownerName: string | null
+  studentCount: number
+  loginEmail: string | null
 }
 
 interface AdminLoginResponse {
-  token: string;
-  admin: { id: string; email: string };
+  token: string
+  admin: { id: string; email: string }
 }
 
 interface AdminAcademyListResponse {
-  academies: AdminAcademy[];
-  count: number;
+  academies: AdminAcademy[]
+  count: number
 }
 
 export const adminApi = {
@@ -68,4 +69,4 @@ export const adminApi = {
     adminHttp
       .get<AdminAcademyListResponse>('/admin/academies', { params })
       .then((response) => response.data),
-};
+}
