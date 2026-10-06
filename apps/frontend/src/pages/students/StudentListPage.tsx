@@ -1,34 +1,35 @@
-import { useState } from 'react';
-import { useMatch, useNavigate, useParams } from 'react-router-dom';
-import { Plus } from 'lucide-react';
-import { PageHeader } from '@/components/templates/PageHeader';
-import { DataTable, type Column } from '@/components/templates/DataTable';
-import { FilterBar } from '@/components/common/FilterBar';
-import { SearchInput } from '@/components/common/SearchInput';
-import { StatusBadge } from '@/components/common/StatusBadge';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react'
+import { useMatch, useNavigate, useParams } from 'react-router-dom'
+import { Plus } from 'lucide-react'
+import { PageHeader } from '@/components/templates/PageHeader'
+import { DataTable, type Column } from '@/components/templates/DataTable'
+import { FilterBar } from '@/components/common/FilterBar'
+import { SearchInput } from '@/components/common/SearchInput'
+import { StatusBadge } from '@/components/common/StatusBadge'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { StudentBulkImportModal } from '@/components/students/StudentBulkImportModal';
-import { StudentCreateDialog } from '@/components/students/StudentCreateDialog';
-import { useClassList } from '@/hooks/useClassList';
-import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { STUDENT_PAGE_SIZE, useStudentList } from '@/hooks/useStudentList';
-import { STUDENT_STATUS_TONE } from '@/lib/constants';
-import { cn } from '@/lib/utils';
-import type { Student, StudentStatus } from '@/types/student';
+} from '@/components/ui/select'
+import { StudentBulkImportModal } from '@/components/students/StudentBulkImportModal'
+import { StudentCreateDialog } from '@/components/students/StudentCreateDialog'
+import { useClassList } from '@/hooks/useClassList'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { STUDENT_PAGE_SIZE, useStudentList } from '@/hooks/useStudentList'
+import { STUDENT_STATUS_TONE } from '@/lib/constants'
+import { cn } from '@/lib/utils'
+import type { Student, StudentStatus } from '@/types/student'
+import { PAGE_TEXT } from '@/lib/pageText'
 
 const STATUS_FILTERS: { label: string; value: StudentStatus | 'all' }[] = [
   { label: '전체', value: 'all' },
   { label: '재원생', value: '재원' },
   { label: '휴원생', value: '휴원' },
   { label: '퇴원생', value: '퇴원' },
-];
+]
 
 const COLUMNS: Column<Student>[] = [
   { key: 'name', header: '이름', className: 'font-medium' },
@@ -48,38 +49,37 @@ const COLUMNS: Column<Student>[] = [
   { key: 'grade', header: '학년' },
   { key: 'parentPhone', header: '학부모연락처' },
   { key: 'enrolledAt', header: '등록일자' },
-];
+]
 
 export default function StudentListPage() {
-  const navigate = useNavigate();
-  const { slug } = useParams();
-  const isCreateOpen = useMatch('/:slug/students/new') !== null;
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StudentStatus | 'all'>('all');
-  const [classFilter, setClassFilter] = useState<string>('all');
-  const [page, setPage] = useState(1);
-  const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const navigate = useNavigate()
+  const { slug } = useParams()
+  const isCreateOpen = useMatch('/:slug/students/new') !== null
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StudentStatus | 'all'>('all')
+  const [classFilter, setClassFilter] = useState<string>('all')
+  const [page, setPage] = useState(1)
+  const [isBulkOpen, setIsBulkOpen] = useState(false)
 
-  const debouncedSearch = useDebouncedValue(search.trim());
-  const { classes } = useClassList();
+  const debouncedSearch = useDebouncedValue(search.trim())
+  const { classes } = useClassList()
   const { students, count, loading, error, reload } = useStudentList({
     q: debouncedSearch,
     status: statusFilter,
     classId: classFilter,
     page,
-  });
+  })
 
   const classItems = [
     { value: 'all', label: '반 전체' },
     ...classes.map((item) => ({ value: item.id, label: item.name })),
-  ];
+  ]
 
   return (
     <div>
       <PageHeader
         title="학생 관리"
-        guide="학생 이름으로 검색하고 상태·반으로 목록을 좁혀볼 수 있습니다."
-        description="재원·휴원·퇴원 학생을 한 목록에서 관리합니다."
+        {...PAGE_TEXT.STUDENT_LIST}
         actions={
           <>
             <Button type="button" variant="outline" onClick={() => setIsBulkOpen(true)}>
@@ -97,8 +97,8 @@ export default function StudentListPage() {
         <SearchInput
           value={search}
           onChange={(value) => {
-            setSearch(value);
-            setPage(1);
+            setSearch(value)
+            setPage(1)
           }}
           placeholder="학생 이름으로 검색"
         />
@@ -110,8 +110,8 @@ export default function StudentListPage() {
               type="button"
               aria-pressed={statusFilter === filter.value}
               onClick={() => {
-                setStatusFilter(filter.value);
-                setPage(1);
+                setStatusFilter(filter.value)
+                setPage(1)
               }}
               className={cn(
                 'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
@@ -129,8 +129,8 @@ export default function StudentListPage() {
           items={classItems}
           value={classFilter}
           onValueChange={(value) => {
-            setClassFilter((value as string | null) ?? 'all');
-            setPage(1);
+            setClassFilter((value as string | null) ?? 'all')
+            setPage(1)
           }}
         >
           <SelectTrigger className="w-40 bg-card" aria-label="반 선택">
@@ -177,5 +177,5 @@ export default function StudentListPage() {
         />
       )}
     </div>
-  );
+  )
 }

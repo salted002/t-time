@@ -10,6 +10,7 @@ import { useSubscription } from '@/hooks/useSubscription'
 import { getErrorMessage } from '@/lib/errors'
 import { formatCreatedDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { PAGE_TEXT } from '@/lib/pageText'
 
 // 구독관리페이지 (SCR-SUBSCRIPTION)
 export default function SubscriptionPage() {
@@ -57,11 +58,7 @@ export default function SubscriptionPage() {
 
   return (
     <div>
-      <PageHeader
-        title="구독 관리"
-        guide="구독하면 시험·통계·리포트의 AI 피드백 잠금이 해제됩니다."
-        description="현재 플랜을 확인하고 구독을 시작하거나 취소합니다."
-      />
+      <PageHeader title="구독 관리" {...PAGE_TEXT.SUBSCRIPTION} />
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 

@@ -1,34 +1,35 @@
-import { useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { isAxiosError } from 'axios';
-import { ImagePlus, X } from 'lucide-react';
-import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-import { PageHeader } from '@/components/templates/PageHeader';
-import { SectionCard } from '@/components/common/SectionCard';
-import { FormField } from '@/components/common/FormField';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useAuth } from '@/hooks/useAuth';
-import { useAuthMe } from '@/hooks/useAuthMe';
-import { useConfirm } from '@/hooks/useConfirm';
-import { api, getToken } from '@/lib/api';
-import { academySettingsSchema } from '@/types/academy';
-import type { AcademySettingsFormValues } from '@/types/academy';
+import { useRef, useState } from 'react'
+import type { ChangeEvent } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { isAxiosError } from 'axios'
+import { ImagePlus, X } from 'lucide-react'
+import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
+import { PageHeader } from '@/components/templates/PageHeader'
+import { SectionCard } from '@/components/common/SectionCard'
+import { FormField } from '@/components/common/FormField'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useAuth } from '@/hooks/useAuth'
+import { useAuthMe } from '@/hooks/useAuthMe'
+import { useConfirm } from '@/hooks/useConfirm'
+import { api, getToken } from '@/lib/api'
+import { academySettingsSchema } from '@/types/academy'
+import type { AcademySettingsFormValues } from '@/types/academy'
+import { PAGE_TEXT } from '@/lib/pageText'
 
-const FORM_ID = 'academy-settings-form';
+const FORM_ID = 'academy-settings-form'
 
 export default function AcademySettingsPage() {
-  const navigate = useNavigate();
-  const { user, setSession, logout } = useAuth();
-  const { me } = useAuthMe();
-  const confirm = useConfirm();
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate()
+  const { user, setSession, logout } = useAuth()
+  const { me } = useAuthMe()
+  const confirm = useConfirm()
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const {
     control,
@@ -45,65 +46,65 @@ export default function AcademySettingsPage() {
       academySlug: me?.academy.slug ?? '',
       smsSenderNumber: me?.academy.smsSenderNumber ?? '',
     },
-  });
+  })
 
-  const currentLogo = logoPreview ?? me?.academy.logoUrl ?? null;
+  const currentLogo = logoPreview ?? me?.academy.logoUrl ?? null
 
   const handleLogoChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const file = event.target.files?.[0]
+    if (!file) return
 
-    setValue('logo', file, { shouldValidate: true, shouldDirty: true });
-    const reader = new FileReader();
-    reader.onload = () => setLogoPreview(reader.result as string);
-    reader.readAsDataURL(file);
-  };
+    setValue('logo', file, { shouldValidate: true, shouldDirty: true })
+    const reader = new FileReader()
+    reader.onload = () => setLogoPreview(reader.result as string)
+    reader.readAsDataURL(file)
+  }
 
   const handleCancelLogo = () => {
-    setValue('logo', undefined, { shouldValidate: true });
-    setLogoPreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
+    setValue('logo', undefined, { shouldValidate: true })
+    setLogoPreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const onSubmit = handleSubmit(async (data) => {
     // 바꾼 항목만 전송 (비워둔 항목이 기존 값을 덮어쓰지 않도록)
-    const formData = new FormData();
-    if (dirtyFields.representativePhone) formData.append('phone', data.representativePhone ?? '');
-    if (dirtyFields.address) formData.append('address', data.address ?? '');
-    if (dirtyFields.academySlug) formData.append('slug', data.academySlug);
-    if (dirtyFields.smsSenderNumber) formData.append('senderNumber', data.smsSenderNumber ?? '');
-    if (data.logo) formData.append('logo', data.logo);
+    const formData = new FormData()
+    if (dirtyFields.representativePhone) formData.append('phone', data.representativePhone ?? '')
+    if (dirtyFields.address) formData.append('address', data.address ?? '')
+    if (dirtyFields.academySlug) formData.append('slug', data.academySlug)
+    if (dirtyFields.smsSenderNumber) formData.append('senderNumber', data.smsSenderNumber ?? '')
+    if (data.logo) formData.append('logo', data.logo)
 
     if ([...formData.keys()].length === 0) {
-      toast.info('변경된 내용이 없습니다.');
-      return;
+      toast.info('변경된 내용이 없습니다.')
+      return
     }
 
-    setSaving(true);
+    setSaving(true)
     try {
-      const response = await api.patch<{ academy: { slug: string } }>('/academy', formData);
-      const nextSlug = response.data.academy.slug;
-      toast.success('학원 정보가 수정되었습니다.');
+      const response = await api.patch<{ academy: { slug: string } }>('/academy', formData)
+      const nextSlug = response.data.academy.slug
+      toast.success('학원 정보가 수정되었습니다.')
 
-      reset(undefined, { keepValues: true });
+      reset(undefined, { keepValues: true })
       if (user && nextSlug !== user.academySlug) {
-        const token = getToken();
+        const token = getToken()
         if (token) {
-          const persist = Boolean(localStorage.getItem('ttime_token'));
-          setSession({ ...user, academySlug: nextSlug }, token, persist);
+          const persist = Boolean(localStorage.getItem('ttime_token'))
+          setSession({ ...user, academySlug: nextSlug }, token, persist)
         }
-        navigate(`/${nextSlug}/settings`, { replace: true });
+        navigate(`/${nextSlug}/settings`, { replace: true })
       }
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 409) {
-        setError('academySlug', { message: '이미 사용 중인 슬러그입니다.' });
+        setError('academySlug', { message: '이미 사용 중인 슬러그입니다.' })
       } else {
-        toast.error('수정 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        toast.error('수정 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
       }
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  });
+  })
 
   const handleDelete = async () => {
     const ok = await confirm({
@@ -112,27 +113,26 @@ export default function AcademySettingsPage() {
         '삭제하면 이 학원과 소속 계정으로 더 이상 로그인할 수 없습니다. 이 작업은 되돌릴 수 없습니다.',
       confirmLabel: '삭제하기',
       tone: 'destructive',
-    });
-    if (!ok) return;
+    })
+    if (!ok) return
 
-    setDeleting(true);
+    setDeleting(true)
     try {
-      await api.delete('/academy');
-      logout();
+      await api.delete('/academy')
+      logout()
       // 로그아웃으로 ProtectedRoute가 /login으로 보내는 동작과 겹치지 않도록 전체 이동한다
-      window.location.replace('/');
+      window.location.replace('/')
     } catch {
-      toast.error('학원 계정 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-      setDeleting(false);
+      toast.error('학원 계정 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
+      setDeleting(false)
     }
-  };
+  }
 
   return (
     <div>
       <PageHeader
         title="학원 설정"
-        guide="학원 로고와 연락처, 주소, 슬러그를 수정할 수 있습니다."
-        description="학원 기본 정보를 관리합니다."
+        {...PAGE_TEXT.ACADEMY_SETTINGS}
         actions={
           <>
             <Button type="submit" form={FORM_ID} disabled={saving || deleting}>
@@ -221,5 +221,5 @@ export default function AcademySettingsPage() {
         </form>
       </SectionCard>
     </div>
-  );
+  )
 }

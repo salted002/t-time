@@ -27,6 +27,7 @@ import { getErrorMessage } from '@/lib/errors'
 import { formatDate, formatScore, formatShortDate } from '@/lib/format'
 import type { StudentExamResult } from '@/types/studentExam'
 import { ReportViewSingleSlide } from '@/components/reports/ReportViewSingleSlide'
+import { PAGE_TEXT } from '@/lib/pageText'
 
 // 학생시험상세페이지 (SCR-STU-EXAM-DETAIL)
 export default function StudentExamDetailPage() {
@@ -54,7 +55,7 @@ export default function StudentExamDetailPage() {
       <div>
         <PageHeader
           title="시험 상세"
-          guide="학생의 시험 성적과 반 통계를 확인합니다."
+          guide={PAGE_TEXT.STUDENT_EXAM_DETAIL.guide}
           back={{ label: '시험 목록으로', to: backPath }}
         />
         <SectionCard>

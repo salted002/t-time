@@ -18,6 +18,7 @@ import { useStudentDetail } from '@/hooks/useStudentDetail'
 import { STUDENT_STATUS_TONE } from '@/lib/constants'
 import { getErrorMessage } from '@/lib/errors'
 import { formatDate } from '@/lib/formatDate'
+import { PAGE_TEXT } from '@/lib/pageText'
 
 export default function StudentDetailPage() {
   const { slug, studentId } = useParams()
@@ -112,7 +113,7 @@ export default function StudentDetailPage() {
     <Tabs defaultValue={searchParams.get('tab') ?? 'info'}>
       <PageHeader
         title={student ? `${student.name} 학생` : '학생 상세'}
-        guide="학생의 기본정보, 성적, 상담 내용을 확인합니다."
+        guide={PAGE_TEXT.STUDENT_DETAIL.guide}
         back={{ label: '학생 관리', to: listPath }}
         actions={
           <TabsList>

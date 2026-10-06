@@ -25,6 +25,7 @@ import { useFetch } from '@/hooks/useFetch'
 import { usePreviewQueue } from '@/hooks/usePreviewQueue'
 import { getErrorMessage } from '@/lib/errors'
 import type { BulkReportItem, SavedReport } from '@/types/report'
+import { PAGE_TEXT } from '@/lib/pageText'
 
 const STEPS = ['학생 선택', '과목 선택', '생성 확인', '생성 결과']
 
@@ -151,7 +152,7 @@ export default function ReportBuildPage() {
     <div>
       <PageHeader
         title="리포트 만들기"
-        guide="학생과 과목을 고르면 최근 10회 시험을 기준으로 리포트를 만듭니다. 저장하지 않고 나가면 만든 리포트는 사라집니다."
+        guide={PAGE_TEXT.REPORT_BUILD.guide}
         back={{ label: '리포트 목록으로', to: `/${slug}/reports` }}
       />
 

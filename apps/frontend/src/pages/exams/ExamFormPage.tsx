@@ -35,6 +35,7 @@ import {
   type ExamFormMode,
   type ExamFormValues,
 } from '@/types/examForm'
+import { PAGE_TEXT } from '@/lib/pageText'
 
 const EVAL_TYPES = Object.keys(EVAL_TYPE_LABEL) as EvalType[]
 
@@ -155,11 +156,7 @@ function ExamForm({ mode, slug, exam }: ExamFormProps) {
     <div>
       <PageHeader
         title={isEdit ? '시험 수정' : '시험 추가'}
-        guide={
-          isEdit
-            ? '시험일자, 시험이름, 만점값, 메모를 수정할 수 있습니다. 응시반·평가방식·과목·등급은 바꿀 수 없습니다.'
-            : '시험 정보를 입력하면 응시반의 재원생이 응시자로 등록됩니다. 응시반, 평가방식, 과목, 등급은 저장 후 바꿀 수 없습니다.'
-        }
+        guide={isEdit ? PAGE_TEXT.EXAM_FORM_EDIT.guide : PAGE_TEXT.EXAM_FORM_CREATE.guide}
         back={{ label: isEdit ? '시험 상세로' : '시험 목록으로', to: backPath }}
       />
 
