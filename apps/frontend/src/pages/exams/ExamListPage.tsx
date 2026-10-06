@@ -12,6 +12,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { EXAM_PAGE_SIZE, useExams } from '@/hooks/useExams'
 import { formatCreatedDate, formatSerial, formatShortDate } from '@/lib/format'
 import type { ExamSummary } from '@/types/exam'
+import { PAGE_TEXT } from '@/lib/pageText'
 
 // DataTable 컬럼 key는 행의 속성명이어야 하므로 일련번호도 행 속성으로 붙인다.
 type ExamRow = ExamSummary & { serial: string; select: string }
@@ -79,8 +80,7 @@ export default function ExamListPage() {
     <div>
       <PageHeader
         title="시험 관리"
-        guide="시험 이름으로 검색하고, 시험을 눌러 성적과 통계를 확인할 수 있습니다."
-        description="반별 시험을 만들고 성적을 입력·관리합니다."
+        {...PAGE_TEXT.EXAM_LIST}
         actions={
           copyMode ? (
             <>

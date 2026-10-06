@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { classApi } from '@/api/classApi'
 import { useFetch } from '@/hooks/useFetch'
 import type { ClassSummary } from '@/types/class'
+import { PAGE_TEXT } from '@/lib/pageText'
 
 const COLUMNS: Column<ClassSummary>[] = [
   { key: 'name', header: '반 이름', className: 'font-medium' },
@@ -34,8 +35,7 @@ export default function ClassListPage() {
     <div>
       <PageHeader
         title="반 관리"
-        guide="반을 만들고 담임강사와 소속 학생을 관리할 수 있습니다."
-        description="학원의 반 목록과 반별 학생 수를 확인합니다."
+        {...PAGE_TEXT.CLASS_LIST}
         actions={
           <Button type="button" onClick={() => setCreateOpen(true)}>
             <Plus /> 반 추가
