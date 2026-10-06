@@ -52,10 +52,11 @@ async function generateSubjectFeedback({
   }
 
   const profile = getSubjectProfile(subjectName)
+  if (profile.key === 'generic') console.warn('[AI 과목 프로필 없음] 과목명:', subjectName) // 자주 보이면 prompt/subjectPrompt.js에 추가
   const buildUser = profile.buildUser ?? buildDefaultUser
   const user = buildUser({ subjectName, trendHistory, classAverageHistory, koreanGrade })
 
-  return callAi({ system: buildSubjectSystemPrompt(profile), user, maxTokens: 300 })
+  return callAi({ system: buildSubjectSystemPrompt(profile, koreanGrade), user, maxTokens: 300 })
 }
 
 /**
