@@ -1,8 +1,6 @@
 const authService = require('../services/authService')
 
-function buildLogoUrl(req, filename) {
-  return filename ? `${req.protocol}://${req.get('host')}/files/${filename}` : null
-}
+const { buildFileUrl: buildLogoUrl } = require('../utils/storageUtil');
 
 async function login(req, res) {
   const { email, password } = req.body
