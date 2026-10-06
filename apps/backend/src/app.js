@@ -44,6 +44,9 @@ app.use('/classes', classRouter)
 app.use('/admin', adminRouter)
 app.use('/subscription', subscriptionRouter)
 
+// 매칭되는 라우트가 없으면 404 → errorHandler가 { success: false, message }로 응답
+app.use(errorHandler.notFoundHandler)
+
 // 에러 처리 미들웨어를 마지막에 등록해야 함
 app.use(errorHandler)
 

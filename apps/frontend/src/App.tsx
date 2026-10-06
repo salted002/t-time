@@ -19,6 +19,7 @@ import AdminProtectedRoute from '@/router/AdminProtectedRoute'
 import AdminLoginPage from '@/pages/admin/AdminLoginPage'
 import AdminAcademyListPage from '@/pages/admin/AdminAcademyListPage'
 import AdminAcademyEditPage from '@/pages/admin/AdminAcademyEditPage'
+import ErrorPage from '@/pages/errorPage'
 import ExamListPage from './pages/exams/ExamListPage'
 import ExamFormPage from './pages/exams/ExamFormPage'
 import ExamDetailPage from './pages/exams/ExamDetailPage'
@@ -93,7 +94,14 @@ function App() {
 
           {import.meta.env.DEV && <Route path="/dev/components" element={<ComponentsPage />} />}
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* 응답이 success: false일 때 message를 보여주는 에러 페이지: navigate('/error', { state: { status, message } }) */}
+          <Route path="/error" element={<ErrorPage />} />
+
+          {/* 정의되지 않은 경로는 404 에러 페이지로 보여준다 */}
+          <Route
+            path="*"
+            element={<ErrorPage status={404} message="요청하신 페이지를 찾을 수 없습니다." />}
+          />
         </Routes>
       </ConfirmProvider>
 

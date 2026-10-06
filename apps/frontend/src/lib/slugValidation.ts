@@ -11,6 +11,7 @@ export const RESERVED_SLUGS = [
   'files',
   'assets',
   'static',
+  'error',
 ] as const;
 
 export const slugSchema = z
