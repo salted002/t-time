@@ -13,6 +13,14 @@ const config = {
     apiKey: process.env.COOLSMS_API_KEY || '',
     apiSecret: process.env.COOLSMS_API_SECRET || '',
   },
+  storage: {
+    type: process.env.STORAGE_TYPE || 'local',
+    localPath: process.env.LOCAL_STORAGE_PATH || 'files',
+  },
+  azure: {
+    connectionString: process.env.AZURE_STORAGE_CONNECTION_STRING || '',
+    containerName: process.env.AZURE_STORAGE_CONTAINER_NAME || '',
+  },
   ai: {
     endpoint: process.env.AZURE_OPENAI_ENDPOINT || '',
     apiKey: process.env.AZURE_OPENAI_API_KEY || '',
