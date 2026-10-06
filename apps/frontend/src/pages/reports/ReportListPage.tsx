@@ -12,6 +12,7 @@ import { REPORT_PAGE_SIZE, useReports } from '@/hooks/useReports'
 import type { Tone } from '@/lib/constants'
 import { formatCreatedDate, formatCreatedDateTime } from '@/lib/format'
 import type { ReportSummary, ShareLinkStatus } from '@/types/report'
+import { PAGE_TEXT } from '@/lib/pageText'
 
 const SHARE_LINK_TONE = {
   없음: 'muted',
@@ -63,8 +64,7 @@ export default function ReportListPage() {
     <div>
       <PageHeader
         title="리포트 관리"
-        guide="저장된 리포트를 학생 이름으로 검색하고, 공유 링크 상태를 확인할 수 있습니다."
-        description="학생별 성적 리포트를 만들고 학부모에게 발송합니다."
+        {...PAGE_TEXT.REPORT_LIST}
         actions={
           <Button type="button" onClick={() => navigate(`/${slug}/reports/new`)}>
             <Plus />

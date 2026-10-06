@@ -38,6 +38,7 @@ import {
   toResultsPayload,
   type ExamResultFormValues,
 } from '@/types/examResultForm'
+import { PAGE_TEXT } from '@/lib/pageText'
 
 const NONE = 'none' // 등급 미입력 선택지
 
@@ -62,7 +63,7 @@ export default function ExamResultFormPage() {
       <div>
         <PageHeader
           title="성적 입력"
-          guide="응시 학생별 점수 또는 등급과 선생님 피드백을 입력합니다."
+          guide={PAGE_TEXT.EXAM_RESULT_FORM.guide}
           back={{ label: '시험 목록으로', to: `/${slug}/exams` }}
         />
         <SectionCard>

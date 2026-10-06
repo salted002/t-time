@@ -17,6 +17,7 @@ import { useExam } from '@/hooks/useExam'
 import { EVAL_TYPE_LABEL } from '@/lib/constants'
 import { getErrorMessage } from '@/lib/errors'
 import { formatDate, formatScore, formatShortDate } from '@/lib/format'
+import { PAGE_TEXT } from '@/lib/pageText'
 
 // 시험상세페이지 (SCR-EXAM-DETAIL)
 export default function ExamDetailPage() {
@@ -104,7 +105,7 @@ export default function ExamDetailPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title={`${exam.name}(${exam.className ?? '삭제된 반'})`}
-        guide="시험 정보와 응시자별 성적, 반 통계를 확인합니다. 성적과 시험 정보는 각 영역의 [수정] 버튼으로 고칩니다."
+        guide={PAGE_TEXT.EXAM_DETAIL.guide}
         back={{ label: '시험 목록으로', to: listPath }}
         actions={
           <>

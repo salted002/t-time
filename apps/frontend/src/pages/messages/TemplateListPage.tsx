@@ -7,6 +7,7 @@ import { TemplateFormModal } from '@/components/messages/TemplateFormModal'
 import { Button } from '@/components/ui/button'
 import { useTemplates } from '@/hooks/useTemplates'
 import type { SmsTemplate } from '@/types/template'
+import { PAGE_TEXT } from '@/lib/pageText'
 
 const COLUMNS: Column<SmsTemplate>[] = [
   { key: 'name', header: '템플릿명', className: 'w-56 font-medium' },
@@ -37,8 +38,7 @@ export default function TemplateListPage() {
     <div>
       <PageHeader
         title="템플릿 관리"
-        guide="리포트 링크를 보낼 때 쓰는 문자 문구를 관리합니다. 기본 템플릿은 발송창을 열 때 자동으로 채워집니다."
-        description="학부모에게 보내는 문자 템플릿을 만들고 수정합니다."
+        {...PAGE_TEXT.TEMPLATE_LIST}
         actions={
           <Button type="button" onClick={() => setModal({})}>
             <Plus />새 템플릿

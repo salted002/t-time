@@ -26,6 +26,7 @@ import { getErrorMessage } from '@/lib/errors'
 import { formatCreatedDateTime, formatFullDate, formatShortDate } from '@/lib/format'
 import type { ReportDetail } from '@/types/reportDetail'
 import type { ShareLink } from '@/types/reportSingle'
+import { PAGE_TEXT } from '@/lib/pageText'
 
 // 리포트상세페이지 (SCR-REPORT-DETAIL)
 export default function ReportDetailPage() {
@@ -144,7 +145,7 @@ function ReportDetailView({ report, backPath }: ReportDetailViewProps) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title={`${report.studentName} 리포트`}
-        guide="저장된 리포트의 통계와 선생님 피드백을 확인하고 학부모에게 발송합니다. 통계는 열 때마다 최신 성적으로 다시 계산됩니다."
+        guide={PAGE_TEXT.REPORT_DETAIL.guide}
         description={`${report.className ?? '(미배정)'} · ${formatCreatedDateTime(report.createdAt)} 생성`}
         back={{ label: '리포트 목록으로', to: backPath }}
         actions={
