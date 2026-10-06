@@ -1,8 +1,6 @@
 const academyService = require('../services/academyService');
 
-function buildLogoUrl(req, filename) {
-  return filename ? `${req.protocol}://${req.get('host')}/files/${filename}` : null;
-}
+const { buildFileUrl: buildLogoUrl } = require('../utils/storageUtil');
 
 async function checkAvailability(req, res) {
   const { slug, businessNumber } = req.body;

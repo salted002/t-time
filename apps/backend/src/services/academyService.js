@@ -1,5 +1,4 @@
-const fs = require('fs')
-const path = require('path')
+const { removeFile: removeLogoFile } = require('../utils/storageUtil');
 const db = require('../db/models')
 const { hashPassword } = require('../utils/passwordUtil')
 const { issueAcademyToken } = require('../utils/jwtUtil')
@@ -37,12 +36,6 @@ async function checkAvailability(slug, businessNumber) {
       businessNumber: businessNumberAvailable ? null : '이미 등록된 사업자번호입니다.',
     },
   }
-}
-
-function removeLogoFile(filename) {
-  fs.unlink(path.join(__dirname, '../files', filename), (err) => {
-    if (err) console.error('로고 파일 삭제 실패:', err)
-  })
 }
 
 async function signup(signupData, logoFilename) {

@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const academyController = require('../controllers/academyController')
-const uploadFiles = require('../middlewares/uploadFiles')
+const uploadFiles = require('../middlewares/upload')
 const { authenticateAcademy } = require('../middlewares/authAcademy')
 const { blockDemo } = require('../middlewares/blockDemo')
 
