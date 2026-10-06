@@ -26,11 +26,12 @@ interface StudentListResult {
 
 export function useStudentList({ q, status, classId, page }: StudentListParams) {
   const [result, setResult] = useState<StudentListResult | null>(null);
-  const requestKey = JSON.stringify({ q, status, classId, page });
+  const [version, setVersion] = useState(0);
+  const requestKey = JSON.stringify({ q, status, classId, page, version });
 
   useEffect(() => {
     let ignore = false;
-    const key = JSON.stringify({ q, status, classId, page });
+    const key = JSON.stringify({ q, status, classId, page, version });
     const params = {
       page,
       size: STUDENT_PAGE_SIZE,
@@ -58,7 +59,7 @@ export function useStudentList({ q, status, classId, page }: StudentListParams) 
     return () => {
       ignore = true;
     };
-  }, [q, status, classId, page]);
+  }, [q, status, classId, page, version]);
 
   // 응답이 현재 조건과 다르면 아직 요청 중인 상태
   const loading = result?.key !== requestKey;
@@ -68,5 +69,6 @@ export function useStudentList({ q, status, classId, page }: StudentListParams) 
     count: result?.count ?? 0,
     loading,
     error: loading ? null : (result?.error ?? null),
+    reload: () => setVersion((value) => value + 1),
   };
 }

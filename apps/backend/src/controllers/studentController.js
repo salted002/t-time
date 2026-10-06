@@ -37,6 +37,22 @@ async function create(req, res) {
   })
 }
 
+async function bulkCreate(req, res) {
+  const { academyId } = req.academy;
+
+  const { createdCount, failedRows } = await studentService.bulkCreate({
+    academyId,
+    rows: req.body.rows,
+  });
+
+  return res.status(200).json({
+    success: true,
+    createdCount,
+    failedRows,
+    message: '일괄 등록이 완료되었습니다.',
+  });
+}
+
 async function getById(req, res) {
   const { academyId } = req.academy
   const { studentId } = req.params
@@ -115,4 +131,4 @@ async function getExamResultDetail(req, res) {
   })
 }
 
-module.exports = { list, create, getById, update, remove, getExamResults, getExamResultDetail }
+module.exports = { list, create, bulkCreate, getById, update, remove, getExamResults, getExamResultDetail }
