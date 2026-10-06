@@ -1,5 +1,12 @@
 const OpenAI = require('openai')
 const env = require('../config/env')
+const {
+  getSubjectProfile,
+  buildSubjectSystemPrompt,
+  buildDefaultUser,
+  cleanHistory,
+} = require('../prompt/subjectPrompt')
+const { OVERALL_SYSTEM_PROMPT, buildOverallUser } = require('../prompt/overallPrompt')
 
 const client = new OpenAI({
   apiKey: env.ai.apiKey,
@@ -26,44 +33,42 @@ async function callAi({ system, user, maxTokens }) {
   }
 }
 
-// 임시 프롬프트 : 과목별
-const SUBJECT_SYSTEM_PROMPT = `당신은 학원 선생님이 학부모에게 보낼 성적 피드백 초안을 쓰도록 돕는 보조자입니다.
-규칙:
-- 존댓말로, 따뜻하지만 구체적으로 2~3문장만 씁니다.
-- 제공된 점수와 추이(상승/하락/유지)만 근거로 쓰고, 없는 수치나 사실을 지어내지 않습니다.
-- 만점 기준을 알 수 없으므로 점수가 높다/낮다고 단정하지 말고, 변화 흐름을 중심으로 씁니다.
-- 학생 이름은 쓰지 말고 "학생"이라고 지칭합니다.
-- 비난하거나 과장하지 않고, 개선할 점은 격려하는 어조로 제안합니다.`
-
-// 임시 프롬프트 : 종합
-const OVERALL_SYSTEM_PROMPT = `당신은 학원 선생님이 참고할 시험 전체 피드백 요약을 쓰도록 돕는 보조자입니다.
-과목별 피드백들을 종합해서 3~4문장으로 학생의 전반적인 강점과 보완점을 정리합니다.
-규칙: 존댓말, 과목별 피드백에 없는 내용을 지어내지 않기, 학생 이름은 쓰지 않고 "학생"이라고 지칭하기.`
-
 /**
  * 과목 하나에 대한 AI 피드백을 생성한다. (REQ-REPORT-03: 과목명별 맞춤 프롬프트)
- * subjectName: 과목명 (예: '문법')
- * trendHistory: [{ examId, examDate, score }] — 이 과목의 최근 점수 추이 (프롬프트 재료)
+ * subjectName: 과목명 (예: '문법', 'SR')
+ * trendHistory: [{ examId, examDate, score }] — 이 과목의 최근 점수 추이
+ * classAverageHistory: [{ examId, examDate, average }] — 같은 시험들의 반평균 (선택)
+ * koreanGrade: 학생의 한국 학년 (예: '5') — SR의 학년 비교에만 쓰인다 (선택)
  */
-async function generateSubjectFeedback({ subjectName, trendHistory }) {
+async function generateSubjectFeedback({
+  subjectName,
+  trendHistory,
+  classAverageHistory,
+  koreanGrade,
+}) {
   // 점수 기록이 없으면 AI를 부르지 않는다. (비용 절약 + 지어내기 방지)
-  if (!trendHistory || trendHistory.length === 0) {
+  if (cleanHistory(trendHistory).length === 0) {
     return `${subjectName} 과목은 아직 비교할 수 있는 점수 기록이 부족합니다.`
   }
 
-  const lines = trendHistory.map((entry) => `- ${entry.examDate}: ${entry.score}점`).join('\n')
-  const user = `과목: ${subjectName}\n최근 점수 추이 (오래된 순):\n${lines}`
+  const profile = getSubjectProfile(subjectName)
+  if (profile.key === 'generic') console.warn('[AI 과목 프로필 없음] 과목명:', subjectName) // 자주 보이면 prompt/subjectPrompt.js에 추가
+  const buildUser = profile.buildUser ?? buildDefaultUser
+  const user = buildUser({ subjectName, trendHistory, classAverageHistory, koreanGrade })
 
-  return callAi({ system: SUBJECT_SYSTEM_PROMPT, user, maxTokens: 300 })
+  return callAi({ system: buildSubjectSystemPrompt(profile, koreanGrade), user, maxTokens: 300 })
 }
 
-// studentName은 인터페이스 호환을 위해 받지만, 개인정보 보호를 위해 프롬프트에는 넣지 않는다.
-async function generateOverallFeedback({ subjectFeedbacks }) {
-  const lines = Object.entries(subjectFeedbacks)
-    .map(([subjectName, feedback]) => `[${subjectName}] ${feedback}`)
-    .join('\n')
+/**
+ * 시험 전체 AI 피드백 (선생님 참고용, 리포트 미포함)
+ * subjectStats: { [과목명]: { recent10, classAverageRecent10 } }
+ * 학생 이름은 개인정보 보호를 위해 프롬프트에 넣지 않는다.
+ */
+async function generateOverallFeedback({ subjectStats, koreanGrade }) {
+  const user = buildOverallUser({ subjectStats, koreanGrade })
+  if (!user) return '종합 피드백을 만들 수 있는 점수 기록이 아직 없습니다.'
 
-  return callAi({ system: OVERALL_SYSTEM_PROMPT, user: lines, maxTokens: 500 })
+  return callAi({ system: OVERALL_SYSTEM_PROMPT, user, maxTokens: 700 })
 }
 
 module.exports = { generateSubjectFeedback, generateOverallFeedback }
