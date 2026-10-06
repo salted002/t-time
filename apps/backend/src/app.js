@@ -13,6 +13,7 @@ const examRouter = require('./routes/examRoutes')
 const reportRouter = require('./routes/reportRoutes')
 const messageLogRouter = require('./routes/messageLogRoutes')
 const errorHandler = require('./middlewares/errorHandler')
+const notFound = require('./middlewares/notFound')
 const shareRouter = require('./routes/shareRoutes')
 const templateRouter = require('./routes/templateRoutes')
 const subscriptionRouter = require('./routes/subscriptionRoutes')
@@ -45,7 +46,7 @@ app.use('/admin', adminRouter)
 app.use('/subscription', subscriptionRouter)
 
 // 매칭되는 라우트가 없으면 404 → errorHandler가 { success: false, message }로 응답
-app.use(errorHandler.notFoundHandler)
+app.use(notFound)
 
 // 에러 처리 미들웨어를 마지막에 등록해야 함
 app.use(errorHandler)
