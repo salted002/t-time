@@ -5,7 +5,7 @@ const {
   buildSubjectSystemPrompt,
   buildDefaultUser,
   cleanHistory,
-} = require('../prompt/subjectPrompt')
+} = require('./prompt/subjectPrompt')
 const { OVERALL_SYSTEM_PROMPT, buildOverallUser } = require('../prompt/overallPrompt')
 
 const client = new OpenAI({
