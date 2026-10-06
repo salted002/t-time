@@ -77,6 +77,7 @@ export default function AdminAcademyListPage() {
         columns={COLUMNS}
         rows={loading ? [] : (result?.academies ?? [])}
         rowKey={(academy) => academy.id}
+        onRowClick={(academy) => navigate(`/admin/academies/${academy.id}`)}
         loading={loading}
         empty={
           result?.error

@@ -18,6 +18,7 @@ import ProtectedRoute from '@/router/ProtectedRoute'
 import AdminProtectedRoute from '@/router/AdminProtectedRoute'
 import AdminLoginPage from '@/pages/admin/AdminLoginPage'
 import AdminAcademyListPage from '@/pages/admin/AdminAcademyListPage'
+import AdminAcademyEditPage from '@/pages/admin/AdminAcademyEditPage'
 import ExamListPage from './pages/exams/ExamListPage'
 import ExamFormPage from './pages/exams/ExamFormPage'
 import ExamDetailPage from './pages/exams/ExamDetailPage'
@@ -53,6 +54,7 @@ function App() {
           >
             <Route index element={<Navigate to="academies" replace />} />
             <Route path="academies" element={<AdminAcademyListPage />} />
+            <Route path="academies/:academyId" element={<AdminAcademyEditPage />} />
           </Route>
 
           {/* 학원 관리자 영역: 로그인·slug 검증을 레이아웃 한 곳에서 처리 */}
