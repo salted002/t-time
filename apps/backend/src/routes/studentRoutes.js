@@ -5,6 +5,7 @@ const { authenticateAcademy } = require('../middlewares/authAcademy')
 
 router.get('/', authenticateAcademy, studentController.list)
 router.post('/', authenticateAcademy, studentController.create)
+router.post('/bulk', authenticateAcademy, studentController.bulkCreate);
 router.get('/:studentId', authenticateAcademy, studentController.getById)
 router.patch('/:studentId', authenticateAcademy, studentController.update)
 router.delete('/:studentId', authenticateAcademy, studentController.remove)

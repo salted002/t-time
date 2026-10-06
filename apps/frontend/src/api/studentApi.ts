@@ -15,10 +15,21 @@ interface StudentCreateResponse {
   student: { id: string; name: string; status: StudentStatus }
 }
 
+export type StudentBulkRow = StudentUpdateBody;
+
+export interface StudentBulkResult {
+  createdCount: number;
+  failedRows: { rowIndex: number; reason: string }[];
+}
+
 export const studentApi = {
   // POST /students
   create: (body: StudentUpdateBody): Promise<{ id: string }> =>
     api.post<StudentCreateResponse>('/students', body).then((response) => response.data.student),
+
+  // POST /students/bulk
+  bulkCreate: (rows: StudentBulkRow[]): Promise<StudentBulkResult> =>
+    api.post<StudentBulkResult>('/students/bulk', { rows }).then((response) => response.data),
 
   // PATCH /students/:studentId
   update: (studentId: string, body: StudentUpdateBody): Promise<void> =>

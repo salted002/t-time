@@ -134,6 +134,79 @@ async function create({
   return student
 }
 
+const BULK_MAX_ROWS = 500;
+const PHONE_PATTERN = /^01[016789]-?\d{3,4}-?\d{4}$/;
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function toText(value) {
+  return value === undefined || value === null ? '' : String(value).trim();
+}
+
+// 일괄 등록 한 행을 검사해 실패 사유를 반환한다. 통과하면 null
+function findBulkRowError(row, classIds) {
+  if (!row || typeof row !== 'object') return '행 형식이 올바르지 않습니다.';
+  if (!row.name) return '이름은 필수입니다.';
+  if (!row.school) return '학교는 필수입니다.';
+  if (!row.grade) return '학년은 필수입니다.';
+  if (!row.parentPhone) return '학부모연락처는 필수입니다.';
+  if (!PHONE_PATTERN.test(row.parentPhone)) return '학부모연락처 형식 오류';
+  if (!VALID_STATUSES.includes(row.status)) return '상태 값이 올바르지 않습니다.';
+  if (row.classId && !classIds.has(row.classId)) return '유효하지 않은 반입니다.';
+  if (row.enrolledAt && (!DATE_PATTERN.test(row.enrolledAt) || Number.isNaN(Date.parse(row.enrolledAt)))) {
+    return '등록일자 형식 오류';
+  }
+  return null;
+}
+
+async function bulkCreate({ academyId, rows }) {
+  const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } });
+  if (!academy) {
+    throwError(401, '유효하지 않은 토큰입니다.');
+  }
+
+  if (!Array.isArray(rows) || rows.length === 0) {
+    throwError(400, '등록할 학생이 없습니다.');
+  }
+  if (rows.length > BULK_MAX_ROWS) {
+    throwError(400, `한 번에 최대 ${BULK_MAX_ROWS}명까지 등록할 수 있습니다.`);
+  }
+
+  const classes = await db.Class.findAll({ where: { academyId }, attributes: ['id'] });
+  const classIds = new Set(classes.map((item) => item.id));
+
+  const validRows = [];
+  const failedRows = [];
+
+  rows.forEach((raw, rowIndex) => {
+    const row = raw && typeof raw === 'object'
+      ? {
+        name: toText(raw.name),
+        classId: toText(raw.classId) || null,
+        status: toText(raw.status) || '재원',
+        school: toText(raw.school),
+        grade: toText(raw.grade),
+        parentPhone: toText(raw.parentPhone),
+        enrolledAt: toText(raw.enrolledAt) || null,
+      }
+      : null;
+
+    const reason = findBulkRowError(row, classIds);
+    if (reason) {
+      failedRows.push({ rowIndex, reason });
+    } else {
+      validRows.push({ ...row, academyId });
+    }
+  });
+
+  if (validRows.length > 0) {
+    await db.sequelize.transaction(async (transaction) => {
+      await db.Student.bulkCreate(validRows, { transaction });
+    });
+  }
+
+  return { createdCount: validRows.length, failedRows };
+}
+
 async function getById({ academyId, studentId }) {
   const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
   if (!academy) {
@@ -442,4 +515,4 @@ async function getExamResultDetail({ academyId, studentId, examId }) {
   }
 }
 
-module.exports = { list, create, getById, update, remove, getExamResults, getExamResultDetail }
+module.exports = { list, create, bulkCreate, getById, update, remove, getExamResults, getExamResultDetail }

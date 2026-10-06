@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { StudentBulkImportModal } from '@/components/students/StudentBulkImportModal';
 import { StudentCreateDialog } from '@/components/students/StudentCreateDialog';
 import { useClassList } from '@/hooks/useClassList';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
@@ -57,10 +58,11 @@ export default function StudentListPage() {
   const [statusFilter, setStatusFilter] = useState<StudentStatus | 'all'>('all');
   const [classFilter, setClassFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
 
   const debouncedSearch = useDebouncedValue(search.trim());
   const { classes } = useClassList();
-  const { students, count, loading, error } = useStudentList({
+  const { students, count, loading, error, reload } = useStudentList({
     q: debouncedSearch,
     status: statusFilter,
     classId: classFilter,
@@ -80,7 +82,7 @@ export default function StudentListPage() {
         description="재원·휴원·퇴원 학생을 한 목록에서 관리합니다."
         actions={
           <>
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" onClick={() => setIsBulkOpen(true)}>
               일괄 등록
             </Button>
             <Button type="button" onClick={() => navigate(`/${slug}/students/new`)}>
@@ -163,6 +165,10 @@ export default function StudentListPage() {
           onPageChange: setPage,
         }}
       />
+
+      {isBulkOpen && (
+        <StudentBulkImportModal onClose={() => setIsBulkOpen(false)} onImported={reload} />
+      )}
 
       {isCreateOpen && (
         <StudentCreateDialog
