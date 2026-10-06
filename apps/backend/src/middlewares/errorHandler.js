@@ -14,13 +14,6 @@ const DEFAULT_ERROR_MESSAGES = {
   502: '외부 서비스(AI, CoolSMS 등) 호출에 실패했습니다.',
 }
 
-// 매칭되는 라우트가 없을 때: Express 기본 HTML 404 대신 공통 에러 응답으로 넘긴다.
-function notFoundHandler(req, res, next) {
-  const error = new Error('존재하지 않는 API 경로입니다.')
-  error.statusCode = 404
-  next(error)
-}
-
 function errorHandler(err, req, res, next) {
   console.error('======error handler========')
   console.error(err.message)
@@ -39,7 +32,7 @@ function errorHandler(err, req, res, next) {
 
   if (err.statusCode) {
     const message = err.message || DEFAULT_ERROR_MESSAGES[err.statusCode] || 'Internal Server Error'
-    return res.status(err.statusCode).json({ success: false, message })
+    return res.status(err.statusCode).json({ success: false, message: message })
   } else if (err instanceof multer.MulterError) {
     const message =
       err.code === 'LIMIT_FILE_SIZE'
@@ -71,4 +64,3 @@ function errorHandler(err, req, res, next) {
 }
 
 module.exports = errorHandler
-module.exports.notFoundHandler = notFoundHandler
