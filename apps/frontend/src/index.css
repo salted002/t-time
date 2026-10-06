@@ -176,4 +176,19 @@
     /* 한글이 단어 중간에서 끊기지 않게 (예: "학부모연락처"가 "학부모연락/처"로 갈리지 않음) */
     word-break: keep-all;
   }
+  /* Tailwind v4는 button 기본 커서가 default라서 클릭 가능한 요소에 포인터를 되돌린다 */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='tab'],
+  [role='option'],
+  [role='menuitem'],
+  [role='checkbox'],
+  [role='radio'],
+  [role='switch'],
+  [role='combobox'],
+  summary,
+  select,
+  label:has(input[type='checkbox'], input[type='radio']) {
+    cursor: pointer;
+  }
 }
