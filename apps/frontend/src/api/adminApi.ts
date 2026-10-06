@@ -47,6 +47,22 @@ export interface AdminAcademy {
   loginEmail: string | null
 }
 
+export interface AdminAcademyDetail {
+  academy: {
+    id: string
+    name: string
+    slug: string
+    phone: string | null
+    address: string | null
+    businessNumber: string
+    ownerName: string
+    logoUrl: string | null
+    smsSenderNumber: string | null
+    subscriptionStatus: 'FREE' | 'SUBSCRIBED'
+  }
+  user: { id: string; name: string; email: string } | null
+}
+
 interface AdminLoginResponse {
   token: string
   admin: { id: string; email: string }
@@ -69,4 +85,20 @@ export const adminApi = {
     adminHttp
       .get<AdminAcademyListResponse>('/admin/academies', { params })
       .then((response) => response.data),
+
+  // GET /admin/academies/{academyId}
+  getAcademy: (academyId: string): Promise<AdminAcademyDetail> =>
+    adminHttp
+      .get<AdminAcademyDetail>(`/admin/academies/${academyId}`)
+      .then((response) => response.data),
+
+  // PATCH /admin/academies/{academyId} (multipart/form-data) — 바꾼 항목만 담아 보낸다
+  updateAcademy: (academyId: string, formData: FormData): Promise<AdminAcademyDetail> =>
+    adminHttp
+      .patch<AdminAcademyDetail>(`/admin/academies/${academyId}`, formData)
+      .then((response) => response.data),
+
+  // DELETE /admin/academies/{academyId} (소프트 삭제)
+  deleteAcademy: (academyId: string): Promise<void> =>
+    adminHttp.delete(`/admin/academies/${academyId}`).then(() => undefined),
 }
