@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MessageSquare, Plus } from 'lucide-react'
+import { MessageSquare, MessageSquareText, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/templates/PageHeader'
 import { DataTable, type Column } from '@/components/templates/DataTable'
 import { StatusBadge } from '@/components/common/StatusBadge'
@@ -54,6 +54,7 @@ export default function TemplateListPage() {
       <PageHeader
         title="템플릿 관리"
         {...PAGE_TEXT.TEMPLATE_LIST}
+        icon={MessageSquareText}
         actions={
           <Button type="button" onClick={() => setModal({})}>
             <Plus />새 템플릿

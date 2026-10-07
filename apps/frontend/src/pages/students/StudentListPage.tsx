@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMatch, useNavigate, useParams } from 'react-router-dom'
-import { Check, Plus } from 'lucide-react'
+import { Check, Plus, Users } from 'lucide-react'
 import { PageHeader } from '@/components/templates/PageHeader'
 import { DataTable, type Column } from '@/components/templates/DataTable'
 import { FilterBar } from '@/components/common/FilterBar'
@@ -93,6 +93,7 @@ export default function StudentListPage() {
     <div>
       <PageHeader
         title="학생 관리"
+        icon={Users}
         {...PAGE_TEXT.STUDENT_LIST}
         actions={
           <>

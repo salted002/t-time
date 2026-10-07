@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Plus } from 'lucide-react'
+import { BarChart3, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/templates/PageHeader'
 import { DataTable, type Column } from '@/components/templates/DataTable'
 import { FilterBar } from '@/components/common/FilterBar'
@@ -80,6 +80,7 @@ export default function ReportListPage() {
     <div>
       <PageHeader
         title="리포트 관리"
+        icon={BarChart3}
         {...PAGE_TEXT.REPORT_LIST}
         actions={
           <Button type="button" onClick={() => navigate(`/${slug}/reports/new`)}>

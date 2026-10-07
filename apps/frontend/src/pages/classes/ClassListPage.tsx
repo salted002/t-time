@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookOpen, Plus } from 'lucide-react'
+import { BookOpen, Plus, School } from 'lucide-react'
 import { PageHeader } from '@/components/templates/PageHeader'
 import { DataTable, type Column } from '@/components/templates/DataTable'
 import { InitialAvatar } from '@/components/common/InitialAvatar'
@@ -59,6 +59,7 @@ export default function ClassListPage() {
     <div>
       <PageHeader
         title="반 관리"
+        icon={School}
         {...PAGE_TEXT.CLASS_LIST}
         actions={
           <Button type="button" onClick={() => setCreateOpen(true)}>

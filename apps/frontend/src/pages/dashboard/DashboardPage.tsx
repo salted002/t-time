@@ -1,6 +1,6 @@
 import type { ComponentType, ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Clock, FileText, Plus, ScrollText, Sparkles, Users } from 'lucide-react'
+import { LayoutDashboard, Clock, FileText, Plus, ScrollText, Sparkles, Users } from 'lucide-react'
 import { PageHeader } from '@/components/templates/PageHeader'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
@@ -27,6 +27,7 @@ export default function DashboardPage() {
     <div>
       <PageHeader
         title={`안녕하세요, ${userName} 님`}
+        icon={LayoutDashboard}
         {...PAGE_TEXT.DASHBOARD}
         description={
           me?.academy.name ? `${me.academy.name}의 현황을 한눈에 확인하세요.` : undefined

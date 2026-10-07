@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Check, Minus, Sparkles } from 'lucide-react'
+import { CreditCard, Check, Minus, Sparkles } from 'lucide-react'
 import { PageHeader } from '@/components/templates/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -62,7 +62,7 @@ export default function SubscriptionPage() {
 
   return (
     <div className="max-w-4xl">
-      <PageHeader title="구독 관리" {...PAGE_TEXT.SUBSCRIPTION} />
+      <PageHeader title="구독 관리" icon={CreditCard} {...PAGE_TEXT.SUBSCRIPTION} />
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 

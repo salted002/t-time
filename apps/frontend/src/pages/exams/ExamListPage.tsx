@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Plus } from 'lucide-react'
+import { FileText, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/templates/PageHeader'
 import { DataTable, type Column } from '@/components/templates/DataTable'
 import { FilterBar } from '@/components/common/FilterBar'
@@ -96,6 +96,7 @@ export default function ExamListPage() {
       <PageHeader
         title="시험 관리"
         {...PAGE_TEXT.EXAM_LIST}
+        icon={FileText}
         actions={
           copyMode ? (
             <>

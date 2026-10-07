@@ -6,7 +6,7 @@ import {
   BarChart3,
   School,
   MessageSquareText,
-  History,
+  Send,
   CreditCard,
   Settings,
 } from 'lucide-react'
@@ -38,7 +38,7 @@ export const ACADEMY_NAV: NavSection[] = [
     label: '발송 관리',
     items: [
       { label: '템플릿 관리', to: 'templates', icon: MessageSquareText },
-      { label: '발송 이력', to: 'message-logs', icon: History },
+      { label: '발송 이력', to: 'message-logs', icon: Send },
     ],
   },
   {
