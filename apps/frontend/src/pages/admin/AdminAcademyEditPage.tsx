@@ -244,7 +244,7 @@ export default function AdminAcademyEditPage() {
               </FormField>
 
               <FormField control={control} name="representativePhone" label="대표연락처" required>
-                {(field) => <Input {...field} placeholder="032-123-4567" />}
+                {(field) => <Input {...field} placeholder="0321234567" />}
               </FormField>
 
               <FormField control={control} name="address" label="주소">
@@ -315,7 +315,7 @@ export default function AdminAcademyEditPage() {
               </FormField>
 
               <FormField control={control} name="smsSenderNumber" label="대표 발신번호">
-                {(field) => <Input {...field} placeholder="010-2345-6789" />}
+                {(field) => <Input {...field} placeholder="01023456789" />}
               </FormField>
             </div>
           </SectionCard>

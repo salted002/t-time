@@ -2,9 +2,9 @@ import { z } from 'zod'
 import { slugSchema } from '@/lib/slugValidation'
 import { academyInfoSchema } from '@/types/academy'
 
-const PHONE_REGEX = /^0\d{1,2}-\d{3,4}-\d{4}$/
-const BUSINESS_NUMBER_REGEX = /^\d{3}-\d{2}-\d{5}$/
-const MIN_PASSWORD_LENGTH = 8
+const PHONE_REGEX = /^0\d{1,2}-?\d{3,4}-?\d{4}$/;
+const BUSINESS_NUMBER_REGEX = /^\d{3}-\d{2}-\d{5}$/;
+const MIN_PASSWORD_LENGTH = 8;
 
 // 개별 학원 수정 폼 (SCR-ADMIN-ACADEMY-UPDATE) — 학원 정보 + 관리자(사용자) 정보
 export const adminAcademyUpdateSchema = z.object({
@@ -13,7 +13,7 @@ export const adminAcademyUpdateSchema = z.object({
   representativePhone: z
     .string()
     .min(1, '대표연락처를 입력해주세요.')
-    .regex(PHONE_REGEX, '올바른 전화번호 형식이 아닙니다. (예: 032-123-4567)'),
+    .regex(PHONE_REGEX, '올바른 전화번호 형식이 아닙니다. (예: 0321234567)'),
   address: z.string().optional(),
   businessRegistrationNumber: z
     .string()
