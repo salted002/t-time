@@ -30,7 +30,7 @@
   --radius: 0.625rem;
 
   /* 바탕과 글자 */
-  --background: oklch(0.964 0.007 88.6); /* #F5F3EE 크림 — 페이지 바탕 */
+  --background: oklch(0.982 0.004 91.4); /* #FAF9F6 연한 크림 — 페이지 바탕 */
   --foreground: oklch(0.218 0 0); /* #1A1A1A 본문 글자 */
   --card: oklch(1 0 0); /* #FFFFFF 카드·표·모달 바탕 */
   --card-foreground: oklch(0.218 0 0);
