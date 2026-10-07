@@ -21,11 +21,11 @@ async function getByToken(token) {
     where: { id: shareLink.reportId },
     include: [
       { model: db.Student, attributes: ['id', 'name'] },
-      { model: db.Academy, attributes: ['name', 'logoUrl', 'subscriptionStatus'] },
+      { model: db.Academy, attributes: ['name', 'logoUrl', 'subscriptionStatus', 'deletedAt'] },
     ],
   })
-  if (!report) {
-    throwError(404, '리포트를 찾을 수 없습니다.')
+  if (!report || report.Academy.deletedAt) {
+    throwError(404, '유효하지 않은 링크입니다.')
   }
 
   const subscribed = report.Academy.subscriptionStatus === 'SUBSCRIBED'

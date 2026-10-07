@@ -132,6 +132,7 @@ async function previewSingle({ academy, student, examId, subscribed }) {
     subjectStats: shared.subjectStats,
     aiSubjectFeedback: shared.aiSubjectFeedback,
     aiOverallFeedback: shared.aiOverallFeedback,
+    aiError: shared.aiError,
     subscribed,
     linkExpiresAt: shared.linkExpiresAt,
   }
@@ -170,6 +171,7 @@ async function previewBulk({ academy, student, subjectNames, subscribed }) {
     subjectStats: shared.subjectStats,
     aiSubjectFeedback: shared.aiSubjectFeedback,
     aiOverallFeedback: shared.aiOverallFeedback,
+    aiError: shared.aiError,
     subscribed,
     linkExpiresAt: shared.linkExpiresAt,
   }
@@ -249,22 +251,40 @@ async function buildTrendAndFeedback({ academy, student, subjectNames, subscribe
 
   let aiSubjectFeedback = null
   let aiOverallFeedback = null
+  let aiError = false // 구독 중인데 AI 생성이 (일부라도) 실패했는지
 
   if (subscribed) {
+    // '초1'~'초6' → '1'~'6'. 중등('중1') 등 그 외 값은 null → 학년 비교만 생략
+    const koreanGrade = /^초([1-6])$/.exec(student.grade)?.[1] ?? null
+
     const feedbackEntries = await Promise.all(
-      subjectNames.map(async (subjectName) => [
-        subjectName,
-        await aiFeedbackService.generateSubjectFeedback({
-          subjectName,
-          trendHistory: trendBySubjectName.get(subjectName) || [],
-        }),
-      ]),
+      subjectNames.map(async (subjectName) => {
+        try {
+          const text = await aiFeedbackService.generateSubjectFeedback({
+            subjectName,
+            trendHistory: trendBySubjectName.get(subjectName) || [],
+            koreanGrade,
+          })
+          return [subjectName, text]
+        } catch (err) {
+          aiError = true
+          console.log(err)
+          return null // 실패한 과목은 결과에서 뺀다
+        }
+      }),
     )
-    aiSubjectFeedback = Object.fromEntries(feedbackEntries)
-    aiOverallFeedback = await aiFeedbackService.generateOverallFeedback({
-      studentName: student.name,
-      subjectFeedbacks: aiSubjectFeedback,
-    })
+    aiSubjectFeedback = Object.fromEntries(feedbackEntries.filter(Boolean))
+
+    try {
+      aiOverallFeedback = await aiFeedbackService.generateOverallFeedback({
+        subjectStats,
+        koreanGrade,
+      })
+    } catch (err) {
+      aiError = true
+      console.log(err)
+      aiOverallFeedback = null
+    }
   }
 
   const linkExpiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 2주 뒤
@@ -274,6 +294,7 @@ async function buildTrendAndFeedback({ academy, student, subjectNames, subscribe
     examIds: recentExamIds,
     aiSubjectFeedback,
     aiOverallFeedback,
+    aiError,
     linkExpiresAt,
   }
 }
@@ -706,6 +727,13 @@ async function update({ academyId, reportId, teacherFeedback, aiFeedback }) {
   }
 
   const updates = {}
+  if (aiFeedback !== undefined) {
+    if (typeof aiFeedback !== 'object' || aiFeedback === null || Array.isArray(aiFeedback)) {
+      throwError(400, 'aiFeedback은 { 과목명: 문장 } 형태의 객체여야 합니다.')
+    }
+    // 과목별 부분 수정 — 넘어온 과목만 덮어쓰고 나머지는 유지
+    updates.aiFeedback = { ...(report.aiFeedback ?? {}), ...aiFeedback }
+  }
   if (teacherFeedback !== undefined) {
     updates.teacherFeedback = teacherFeedback
   }
@@ -714,7 +742,7 @@ async function update({ academyId, reportId, teacherFeedback, aiFeedback }) {
     updates.aiFeedback = { ...(report.aiFeedback ?? {}), ...aiFeedback }
   }
 
-  await report.update({ teacherFeedback })
+  await report.update(updates)
 
   return {
     id: report.id,
@@ -744,6 +772,10 @@ async function send({ academyId, items }) {
     const { reportId, recipientPhone, message } = item
 
     try {
+      if (typeof message !== 'string' || !message.trim()) {
+        throwError(400, '메시지를 입력해 주세요.')
+      }
+
       if (!PHONE_PATTERN.test(recipientPhone)) {
         throwError(400, '수신번호 형식 오류')
       }
