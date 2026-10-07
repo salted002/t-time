@@ -1,4 +1,5 @@
 const shareService = require('../services/shareService')
+const { buildFileUrl } = require('../utils/storageUtil')
 
 async function getByToken(req, res) {
   const { token } = req.params
@@ -8,6 +9,7 @@ async function getByToken(req, res) {
   return res.status(200).json({
     success: true,
     ...report,
+    academyLogoUrl: buildFileUrl(req, report.academyLogoUrl),
     message: '공유 리포트 조회 성공',
   })
 }
