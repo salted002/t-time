@@ -496,7 +496,7 @@ async function up(queryInterface) {
       slug: 'tomato',
       business_number: '123-45-67890',
       owner_name: '김선주',
-      logo_url: null,
+      logo_url: 'tomato-logo.png',
       phone: '032-123-4567',
       address: '경기도 부천시 상동로 123',
       sms_sender_number: '01012345678',
