@@ -3,7 +3,7 @@ import { slugSchema } from '@/lib/slugValidation'
 import { academyInfoSchema } from '@/types/academy'
 
 const PHONE_REGEX = /^0\d{1,2}-?\d{3,4}-?\d{4}$/;
-const BUSINESS_NUMBER_REGEX = /^\d{3}-\d{2}-\d{5}$/;
+const BUSINESS_NUMBER_REGEX = /^\d{3}-?\d{2}-?\d{5}$/;
 const MIN_PASSWORD_LENGTH = 8;
 
 // 개별 학원 수정 폼 (SCR-ADMIN-ACADEMY-UPDATE) — 학원 정보 + 관리자(사용자) 정보
@@ -18,7 +18,9 @@ export const adminAcademyUpdateSchema = z.object({
   businessRegistrationNumber: z
     .string()
     .min(1, '사업자번호를 입력해주세요.')
-    .regex(BUSINESS_NUMBER_REGEX, '올바른 사업자번호 형식이 아닙니다. (예: 123-45-67890)'),
+    .regex(BUSINESS_NUMBER_REGEX, '올바른 사업자번호 형식이 아닙니다. (예: 123-45-67890)')
+    // 하이픈 없이 입력해도 서버 중복 검사가 맞도록 항상 123-45-67890 형태로 보낸다
+    .transform((value) => value.replace(/^(\d{3})-?(\d{2})-?(\d{5})$/, '$1-$2-$3')),
   representativeName: z.string().trim().min(1, '대표자명을 입력해주세요.'),
   smsSenderNumber: academyInfoSchema.shape.smsSenderNumber,
   logo: academyInfoSchema.shape.logo,

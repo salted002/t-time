@@ -47,7 +47,15 @@ export default function SignupAcademyStep({
 
   const { control, handleSubmit, setValue, reset } = useForm<AcademyInfoFormValues>({
     resolver: zodResolver(academyInfoSchema),
-    defaultValues: academyInfo ?? undefined,
+    defaultValues: academyInfo ?? {
+      academyName: '',
+      representativePhone: '',
+      academySlug: '',
+      address: '',
+      businessRegistrationNumber: '',
+      representativeName: '',
+      smsSenderNumber: '',
+    },
   })
 
   useEffect(() => {
@@ -141,7 +149,7 @@ export default function SignupAcademyStep({
               name="academySlug"
               label="학원 슬러그"
               required
-              description="hanbit.t-time.kr 형태로 사용됩니다"
+              description="학원 전용 주소(예: 티타임 주소/hanbit)로 사용됩니다"
             >
               {(field) => <Input {...field} placeholder="hanbit" />}
             </FormField>

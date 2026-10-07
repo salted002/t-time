@@ -98,6 +98,8 @@ export default function AcademySettingsPage() {
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 409) {
         setError('academySlug', { message: '이미 사용 중인 슬러그입니다.' })
+      } else if (isAxiosError(error) && error.response?.status === 403) {
+        toast.error(error.response.data?.message ?? '사용할 수 없는 기능입니다.')
       } else {
         toast.error('수정 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
       }
@@ -122,8 +124,12 @@ export default function AcademySettingsPage() {
       logout()
       // 로그아웃으로 ProtectedRoute가 /login으로 보내는 동작과 겹치지 않도록 전체 이동한다
       window.location.replace('/')
-    } catch {
-      toast.error('학원 계정 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
+    } catch (error) {
+      toast.error(
+        isAxiosError(error) && error.response?.status === 403
+          ? (error.response.data?.message ?? '사용할 수 없는 기능입니다.')
+          : '학원 계정 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+      )
       setDeleting(false)
     }
   }

@@ -30,7 +30,7 @@ export default function LoginPage() {
 
   const { handleSubmit, control } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { rememberMe: true },
+    defaultValues: { email: '', password: '', rememberMe: true },
   })
 
   const handleInvalid = (formErrors: FieldErrors<LoginFormValues>) => {
@@ -93,7 +93,7 @@ export default function LoginPage() {
       </div>
 
       <div className="flex flex-1 items-center justify-center bg-white px-6 py-16">
-        <form onSubmit={onSubmit} className="w-full max-w-[320px] space-y-5">
+        <form onSubmit={onSubmit} noValidate className="w-full max-w-[320px] space-y-5">
           {/* 이메일 필드 */}
           <FormField control={control} name="email" label="이메일(로그인 아이디)" required>
             {(field) => <Input {...field} type="email" placeholder="admin@hanbit.kr" />}
