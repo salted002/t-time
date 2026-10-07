@@ -83,7 +83,7 @@ export function SendSingleModal({
             id="send-single-phone"
             value={phone}
             onChange={(event) => setPhoneInput(event.target.value)}
-            placeholder="010-1234-5678"
+            placeholder="01012345678"
             inputMode="tel"
             aria-invalid={phoneInvalid}
             className="max-w-xs"
