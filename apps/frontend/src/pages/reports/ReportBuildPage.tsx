@@ -21,6 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { reportApi } from '@/api/reportApi'
+import { useConfirm } from '@/hooks/useConfirm'
 import { useFetch } from '@/hooks/useFetch'
 import { usePreviewQueue } from '@/hooks/usePreviewQueue'
 import { getErrorMessage } from '@/lib/errors'
@@ -35,6 +36,7 @@ const STEPS = ['학생 선택', '과목 선택', '생성 확인', '생성 결과
 export default function ReportBuildPage() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
+  const confirm = useConfirm()
 
   const [step, setStep] = useState(0)
   const [studentIds, setStudentIds] = useState<string[]>([])
@@ -117,12 +119,33 @@ export default function ReportBuildPage() {
   const hasUnsaved =
     step === 3 && !savedReports && queue.items.some((item) => item.status === 'done')
 
-  // 새로고침·탭 닫기 시 저장하지 않은 리포트가 사라진다는 브라우저 기본 경고
+  // 저장하지 않은 리포트가 있을 때 화면을 나가면 확인한다
+  // - 새로고침·탭 닫기: 브라우저 기본 경고
+  // - 앱 안 링크(리포트 목록으로, 사이드바 메뉴): 확인창 후 이동 (BrowserRouter라 useBlocker를 쓸 수 없음)
   useEffect(() => {
     if (!hasUnsaved) return
     const warn = (event: BeforeUnloadEvent) => event.preventDefault()
+    const guardLink = async (event: MouseEvent) => {
+      const link = (event.target as Element | null)?.closest('a')
+      if (!link || link.target || link.origin !== window.location.origin) return
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey) return
+      event.preventDefault()
+      event.stopPropagation()
+      const ok = await confirm({
+        title: '저장하지 않고 나갈까요?',
+        description: '저장하지 않은 리포트는 사라집니다.',
+        confirmLabel: '나가기',
+        tone: 'destructive',
+      })
+      if (ok) navigate(link.pathname + link.search)
+    }
     window.addEventListener('beforeunload', warn)
-    return () => window.removeEventListener('beforeunload', warn)
+    document.addEventListener('click', guardLink, true)
+    return () => {
+      window.removeEventListener('beforeunload', warn)
+      document.removeEventListener('click', guardLink, true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasUnsaved])
 
   const saveSelected = async () => {
