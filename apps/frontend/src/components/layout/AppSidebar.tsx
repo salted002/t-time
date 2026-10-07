@@ -33,7 +33,7 @@ export function AppSidebar({ sections, basePath, brand, account, plan }: AppSide
     <Sidebar>
       <SidebarHeader>
         <div className="px-3 pt-4 pb-1">
-          <BrandMark textClassName="text-white" />
+          <BrandMark textClassName="text-[#F5EDE0]" />
         </div>
         <div className="mx-1 mt-2 flex items-center gap-3 rounded-lg border border-sidebar-border bg-white/10 px-3 py-2.5">
           <Avatar className="rounded-md">
