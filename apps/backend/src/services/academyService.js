@@ -1,7 +1,8 @@
-const { removeFile: removeLogoFile } = require('../utils/storageUtil');
+const { removeFile: removeLogoFile } = require('../utils/storageUtil')
 const db = require('../db/models')
 const { hashPassword } = require('../utils/passwordUtil')
 const { issueAcademyToken } = require('../utils/jwtUtil')
+const { getSlugError } = require('../utils/slugUtil')
 
 function throwError(statusCode, message) {
   const error = new Error(message)
@@ -14,7 +15,10 @@ async function checkAvailability(slug, businessNumber) {
     throwError(400, 'slug는 필수입니다.')
   }
 
-  const existingSlug = await db.Academy.findOne({ where: { slug, deletedAt: null } })
+  const slugError = getSlugError(slug)
+  const existingSlug = slugError
+    ? null
+    : await db.Academy.findOne({ where: { slug, deletedAt: null } })
 
   let businessNumberAvailable = true
   if (businessNumber) {
@@ -24,7 +28,7 @@ async function checkAvailability(slug, businessNumber) {
     businessNumberAvailable = !existingBusinessNumber
   }
 
-  const slugAvailable = !existingSlug
+  const slugAvailable = !slugError && !existingSlug
 
   return {
     available: {
@@ -32,7 +36,7 @@ async function checkAvailability(slug, businessNumber) {
       businessNumber: businessNumberAvailable,
     },
     reasons: {
-      slug: slugAvailable ? null : '이미 등록된 슬러그입니다.',
+      slug: slugError ?? (slugAvailable ? null : '이미 등록된 슬러그입니다.'),
       businessNumber: businessNumberAvailable ? null : '이미 등록된 사업자번호입니다.',
     },
   }
@@ -74,6 +78,9 @@ async function signup(signupData, logoFilename) {
     if (password !== passwordConfirm) {
       throwError(400, '비밀번호가 일치하지 않습니다.')
     }
+
+    const slugError = getSlugError(slug)
+    if (slugError) throwError(400, slugError)
 
     const [existingSlug, existingBusinessNumber, existingEmail] = await Promise.all([
       db.Academy.findOne({ where: { slug, deletedAt: null } }),
@@ -133,6 +140,9 @@ async function updateAcademy(academyId, updateData, file) {
 
     if (slug && slug !== academy.slug) {
       if (academy.isDemo) throwError(403, '데모 계정에서는 학원 슬러그를 변경할 수 없습니다.')
+
+      const slugError = getSlugError(slug)
+      if (slugError) throwError(400, slugError)
 
       const existingSlug = await db.Academy.findOne({ where: { slug, deletedAt: null } })
       if (existingSlug) throwError(409, '이미 사용 중인 슬러그입니다.')
