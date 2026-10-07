@@ -67,7 +67,11 @@ export default function StudentDetailPage() {
 
     const ok = await confirm({
       title: '학생을 삭제할까요?',
-      description: '삭제할 경우 학생 정보가 삭제됩니다. 계속하시겠습니까?',
+      description:
+        '학생 정보와 상담 기록, 이 학생의 리포트와 공유 링크가 함께 삭제됩니다. ' +
+        '이미 발송한 리포트 링크는 더 이상 열리지 않습니다. ' +
+        '시험 성적과 발송 이력은 이름만 남아 유지됩니다. ' +
+        '기록을 보관하려면 삭제 대신 상태를 "퇴원"으로 바꿔 주세요. 계속하시겠습니까?',
       confirmLabel: '삭제',
       tone: 'destructive',
     })

@@ -423,6 +423,14 @@ async function create({
     throwError(400, 'examId는 examIds에 포함되어 있어야 합니다.')
   }
 
+  if (
+    teacherFeedback !== undefined &&
+    teacherFeedback !== null &&
+    typeof teacherFeedback !== 'string'
+  ) {
+    throwError(400, 'teacherFeedback은 문자열이어야 합니다.')
+  }
+
   const subscribed = academy.subscriptionStatus === 'SUBSCRIBED'
 
   const subjectStats = await buildSubjectStatsSnapshot({
@@ -724,6 +732,14 @@ async function update({ academyId, reportId, teacherFeedback, aiFeedback }) {
   const subscribed = academy.subscriptionStatus === 'SUBSCRIBED'
   if (aiFeedback !== undefined && !subscribed) {
     throwError(403, '구독 중인 학원만 AI 피드백을 수정할 수 있습니다.')
+  }
+
+  if (
+    teacherFeedback !== undefined &&
+    teacherFeedback !== null &&
+    typeof teacherFeedback !== 'string'
+  ) {
+    throwError(400, 'teacherFeedback은 문자열이어야 합니다.')
   }
 
   const updates = {}
