@@ -17,6 +17,10 @@
  * 실행 명령어 (레포 루트에 seed alias가 없어 backend workspace 지정 필요)
  *   npm run seed --workspace=apps/backend
  *
+ * 로고 업로드
+ *  - "src/db/seedAssets/tomato-logo.png" 필요
+ *  - Azure 모드면 시드가 Blob에 자동 업로드함.
+ *
  * 되돌리기(삭제) — 다시 실행하기 전에 꼭 먼저 지워주세요, 안 그러면 학원이 중복 생성됩니다
  *   npx sequelize-cli db:seed:undo --seed 0001-demo-academy.js
  *
@@ -27,8 +31,41 @@
 
 'use strict'
 
+const fs = require('fs')
+const path = require('path')
+const { BlobServiceClient } = require('@azure/storage-blob')
+const config = require('../../config/env')
+const { LOCAL_DIR } = require('../../utils/storageUtil')
 const bcrypt = require('bcrypt')
 const { randomUUID, randomBytes } = require('crypto')
+
+const DEMO_LOGO_FILENAME = 'tomato-logo.png'
+const DEMO_LOGO_SOURCE = path.join(__dirname, '..', 'seedAssets', DEMO_LOGO_FILENAME)
+
+// =====================================================================
+// 로고 업로드 함수
+// =====================================================================
+async function uploadDemoLogo() {
+  if (!fs.existsSync(DEMO_LOGO_SOURCE)) {
+    console.warn(`[seed] 로고 원본이 없어 업로드를 건너뜁니다: ${DEMO_LOGO_SOURCE}`)
+    return
+  }
+
+  if (config.storage.type === 'azure') {
+    const container = BlobServiceClient.fromConnectionString(
+      config.azure.connectionString,
+    ).getContainerClient(config.azure.containerName)
+    await container.createIfNotExists({ access: 'blob' })
+    await container
+      .getBlockBlobClient(DEMO_LOGO_FILENAME)
+      .uploadFile(DEMO_LOGO_SOURCE, { blobHTTPHeaders: { blobContentType: 'image/png' } })
+    console.log(`[seed] Azure Blob에 로고 업로드: ${DEMO_LOGO_FILENAME}`)
+  } else {
+    fs.mkdirSync(LOCAL_DIR, { recursive: true })
+    fs.copyFileSync(DEMO_LOGO_SOURCE, path.join(LOCAL_DIR, DEMO_LOGO_FILENAME))
+    console.log(`[seed] 로컬 files 폴더에 로고 복사: ${DEMO_LOGO_FILENAME}`)
+  }
+}
 
 // =====================================================================
 // 0. 유틸 — 시드 고정 난수 / 날짜
@@ -482,6 +519,8 @@ const gradeLabelOf = (pct) =>
 // 4. up
 // =====================================================================
 async function up(queryInterface) {
+  await uploadDemoLogo()
+
   const now = new Date()
   const passwordHash = bcrypt.hashSync('Ttime1234!', 10)
 
@@ -496,7 +535,7 @@ async function up(queryInterface) {
       slug: 'tomato',
       business_number: '123-45-67890',
       owner_name: '김선주',
-      logo_url: 'tomato-logo.png',
+      logo_url: DEMO_LOGO_FILENAME,
       phone: '032-123-4567',
       address: '경기도 부천시 상동로 123',
       sms_sender_number: '01012345678',
