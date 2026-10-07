@@ -9,6 +9,7 @@ import { BrandMark } from '@/components/common/BrandMark'
 import { DEMO_ACCOUNT } from '@/lib/constants'
 import { GITHUB_URL } from '@/lib/constants'
 import { getErrorMessage } from '@/lib/errors'
+import landingPreview from '@/assets/landing-preview-dashboard.png' // webp로 줄였다면 확장자만 바꿔요
 
 // SCR-LANDING 서비스 소개 페이지 (로그인 상태면 학원 메인(대시보드)으로 즉시 이동)
 
@@ -121,7 +122,23 @@ export default function LandingPage() {
           </p>
         </section>
 
-        {/* 제품 미리보기 자리: 성적 화면 확정 후 스크린샷을 여기에 넣는다 */}
+        {/* 제품 미리보기(스크린샷) */}
+        <section className="mx-auto mt-14 w-full max-w-5xl px-8">
+          <div className="overflow-hidden rounded-xl border bg-card shadow-[0_24px_60px_-20px_rgba(36,79,65,0.35)]">
+            <div className="flex items-center gap-1.5 border-b bg-muted/60 px-4 py-3" aria-hidden>
+              <span className="size-2.5 rounded-full bg-[#E6B0A8]" />
+              <span className="size-2.5 rounded-full bg-[#E8D08A]" />
+              <span className="size-2.5 rounded-full bg-[#A9CDB8]" />
+            </div>
+            <img
+              src={landingPreview}
+              alt="티타임 대시보드 화면: 오늘 할 일, 학생·시험·리포트 현황을 한눈에 확인합니다."
+              width={1440}
+              height={900}
+              className="block w-full"
+            />
+          </div>
+        </section>
 
         {/* 사용 단계 */}
         <section id="steps" className="mx-auto mt-24 w-full max-w-6xl scroll-mt-6 px-8">
