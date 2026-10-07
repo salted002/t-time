@@ -37,9 +37,9 @@ export function AdminLayout() {
             로그아웃
           </Button>
         </header>
-        <main className="px-8 py-6">
+        <div className="px-8 py-6">
           <Outlet />
-        </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )

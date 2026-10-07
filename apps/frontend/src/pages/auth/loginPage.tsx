@@ -30,7 +30,7 @@ export default function LoginPage() {
 
   const { handleSubmit, control } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { rememberMe: true },
+    defaultValues: { email: '', password: '', rememberMe: true },
   })
 
   const handleInvalid = (formErrors: FieldErrors<LoginFormValues>) => {

@@ -17,15 +17,11 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
   if (!user) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
-  // 존재하지 않거나 내 학원이 아닌 슬러그는 404 (다른 학원의 존재 여부는 알려주지 않는다)
+  // 내 학원이 아닌 슬러그는 같은 하위 경로의 내 학원 주소로 보낸다 (API 명세서 "URL 구조")
+  // 존재 여부와 상관없이 똑같이 이동하므로 다른 학원의 존재 여부는 드러나지 않는다
   if (slug && slug !== user.academySlug) {
-    return (
-      <ErrorPage
-        status={404}
-        message="요청하신 페이지를 찾을 수 없습니다."
-        homePath={`/${user.academySlug}`}
-      />
-    );
+    const rest = location.pathname.split('/').slice(2).join('/');
+    return <Navigate to={`/${user.academySlug}/${rest}${location.search}`} replace />;
   }
   return <>{children}</>;
 }

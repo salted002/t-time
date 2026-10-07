@@ -31,11 +31,26 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// 401이어도 세션 만료가 아닌 요청 (로그인 실패, 현재 비밀번호 불일치)
+const NON_SESSION_401_URLS = ['/auth/login', '/auth/password'];
+
+let unauthorizedHandler: (() => void) | null = null;
+
+// 세션 만료(401) 시 실행할 함수. AuthProvider가 logout을 등록한다.
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler;
+}
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
+    if (
+      axios.isAxiosError(error) &&
+      error.response?.status === 401 &&
+      !NON_SESSION_401_URLS.includes(error.config?.url ?? '')
+    ) {
       clearToken();
+      unauthorizedHandler?.();
     }
     return Promise.reject(error);
   }
