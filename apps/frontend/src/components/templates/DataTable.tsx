@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { ChevronRight } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -60,12 +61,17 @@ export function DataTable<T>({
       <div className="overflow-hidden rounded-lg border bg-card">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="bg-muted hover:bg-muted">
               {columns.map((column) => (
-                <TableHead key={column.key} className={column.className}>
+                <TableHead
+                  key={column.key}
+                  className={cn('text-xs font-semibold text-muted-foreground', column.className)}
+                >
                   {column.header}
                 </TableHead>
               ))}
+              {/* 행 클릭이 되는 표는 오른쪽 끝에 > 아이콘 칸을 둔다 */}
+              {onRowClick && <TableHead className="w-10" />}
             </TableRow>
           </TableHeader>
 
@@ -78,6 +84,7 @@ export function DataTable<T>({
                       <Skeleton className="h-4 w-full max-w-24" />
                     </TableCell>
                   ))}
+                  {onRowClick && <TableCell />}
                 </TableRow>
               ))}
 
@@ -86,13 +93,21 @@ export function DataTable<T>({
                 <TableRow
                   key={rowKey(row)}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
-                  className={cn(onRowClick && 'cursor-pointer')}
+                  className={cn(onRowClick && 'group cursor-pointer')}
                 >
                   {columns.map((column) => (
                     <TableCell key={column.key} className={column.className}>
                       {column.cell ? column.cell(row) : String(row[column.key] ?? '-')}
                     </TableCell>
                   ))}
+                  {onRowClick && (
+                    <TableCell className="w-10 pl-0 text-right">
+                      <ChevronRight
+                        aria-hidden
+                        className="ml-auto size-4 text-border transition-colors group-hover:text-primary"
+                      />
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
           </TableBody>

@@ -18,16 +18,31 @@ import { PAGE_TEXT } from '@/lib/pageText'
 type ExamRow = ExamSummary & { serial: string; select: string }
 
 const COLUMNS: Column<ExamRow>[] = [
-  { key: 'serial', header: '번호', className: 'w-24 tabular-nums' },
-  { key: 'examDate', header: '시험일자', cell: (exam) => formatShortDate(exam.examDate) },
-  { key: 'name', header: '시험명', className: 'font-medium' },
+  { key: 'serial', header: '번호', className: 'w-24 tabular-nums text-muted-foreground' },
+  {
+    key: 'examDate',
+    header: '시험일자',
+    className: 'tabular-nums text-muted-foreground',
+    cell: (exam) => formatShortDate(exam.examDate),
+  },
+  { key: 'name', header: '시험명', className: 'font-semibold' },
   {
     key: 'className',
     header: '반',
     cell: (exam) => exam.className ?? <span className="text-muted-foreground">삭제된 반</span>,
   },
-  { key: 'participantCount', header: '응시인원', cell: (exam) => `${exam.participantCount}명` },
-  { key: 'createdAt', header: '생성일시', cell: (exam) => formatCreatedDate(exam.createdAt) },
+  {
+    key: 'participantCount',
+    header: '응시인원',
+    className: 'text-right tabular-nums',
+    cell: (exam) => `${exam.participantCount}명`,
+  },
+  {
+    key: 'createdAt',
+    header: '생성일시',
+    className: 'tabular-nums text-muted-foreground',
+    cell: (exam) => formatCreatedDate(exam.createdAt),
+  },
 ]
 
 // 시험목록페이지 (SCR-EXAM-LIST)

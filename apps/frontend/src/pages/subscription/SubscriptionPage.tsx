@@ -75,7 +75,12 @@ export default function SubscriptionPage() {
         <>
           <div className="grid items-stretch gap-5 sm:grid-cols-2">
             {/* FREE */}
-            <section className="flex flex-col rounded-xl border bg-card p-7 transition-shadow hover:shadow-md">
+            <section
+              className={cn(
+                'flex flex-col rounded-xl bg-card p-7 transition-shadow hover:shadow-md',
+                !subscribed ? 'border-2 border-primary shadow-md' : 'border',
+              )}
+            >
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-bold tracking-wide">{PLAN_INFO.FREE.name}</h2>
                 {!subscribed && <Badge variant="success">현재 플랜</Badge>}
@@ -94,7 +99,12 @@ export default function SubscriptionPage() {
             </section>
 
             {/* AI PRO */}
-            <section className="flex flex-col rounded-xl border-2 border-primary bg-card p-7 shadow-md">
+            <section
+              className={cn(
+                'flex flex-col rounded-xl bg-card p-7 transition-shadow hover:shadow-md',
+                subscribed ? 'border-2 border-primary shadow-md' : 'border',
+              )}
+            >
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-bold tracking-wide text-primary">
                   {PLAN_INFO.SUBSCRIBED.name}

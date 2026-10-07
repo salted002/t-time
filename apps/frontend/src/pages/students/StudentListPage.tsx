@@ -6,6 +6,8 @@ import { DataTable, type Column } from '@/components/templates/DataTable'
 import { FilterBar } from '@/components/common/FilterBar'
 import { SearchInput } from '@/components/common/SearchInput'
 import { StatusBadge } from '@/components/common/StatusBadge'
+import { InitialAvatar } from '@/components/common/InitialAvatar'
+
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -27,7 +29,17 @@ import { PAGE_TEXT } from '@/lib/pageText'
 const STATUS_OPTIONS: StudentStatus[] = ['재원', '휴원', '퇴원']
 
 const COLUMNS: Column<Student>[] = [
-  { key: 'name', header: '이름', className: 'font-medium' },
+  {
+    key: 'name',
+    header: '이름',
+    className: 'font-medium',
+    cell: (student) => (
+      <span className="flex items-center gap-2.5">
+        <InitialAvatar name={student.name} />
+        {student.name}
+      </span>
+    ),
+  },
   {
     key: 'className',
     header: '반',
