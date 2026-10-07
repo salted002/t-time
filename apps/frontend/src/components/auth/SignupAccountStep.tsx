@@ -55,7 +55,7 @@ export default function SignupAccountStep({
 
   const { handleSubmit, control } = useForm<AccountInfoFormValues>({
     resolver: zodResolver(accountInfoSchema),
-    defaultValues: { privacyConsent: true },
+    defaultValues: { name: '', email: '', password: '', passwordConfirm: '', privacyConsent: true },
   })
 
   const handleInvalid = (formErrors: FieldErrors<AccountInfoFormValues>) => {

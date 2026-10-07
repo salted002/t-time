@@ -1,6 +1,6 @@
-import { createContext, useState } from 'react';
+import { createContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { api, clearToken, getToken, setToken } from '@/lib/api';
+import { api, clearToken, getToken, setToken, setUnauthorizedHandler } from '@/lib/api';
 import type { User } from '@/types/auth';
 
 const USER_KEY = 'ttime_user';
@@ -41,6 +41,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(nextUser);
   };
 
+  const logout = () => {
+    clearToken();
+    localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(USER_KEY);
+    setUser(null);
+  };
+
+  // 토큰 만료 등으로 401이 오면 세션을 지운다 → ProtectedRoute가 /login으로 보낸다
+  useEffect(() => {
+    setUnauthorizedHandler(logout);
+    return () => setUnauthorizedHandler(null);
+  }, []);
+
   const value: AuthContextValue = {
     user,
     login: async (email, password, rememberMe) => {
@@ -50,12 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return response.data.user;
     },
     setSession: persistSession,
-    logout: () => {
-      clearToken();
-      localStorage.removeItem(USER_KEY);
-      sessionStorage.removeItem(USER_KEY);
-      setUser(null);
-    },
+    logout,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

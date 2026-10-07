@@ -44,9 +44,9 @@ function AppLayoutContent() {
       />
       <SidebarInset>
         <AppHeader userName={userName} userEmail={user?.email ?? ''} onLogout={handleLogout} />
-        <main className="px-8 py-6">
+        <div className="px-4 py-6 md:px-8">
           <Outlet />
-        </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )
