@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { BookOpen, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/templates/PageHeader'
 import { DataTable, type Column } from '@/components/templates/DataTable'
+import { InitialAvatar } from '@/components/common/InitialAvatar'
 import { ClassCreateModal } from '@/components/classes/ClassCreateModal'
 import { ClassDetailModal } from '@/components/classes/ClassDetailModal'
 import { Button } from '@/components/ui/button'
@@ -11,16 +12,39 @@ import type { ClassSummary } from '@/types/class'
 import { PAGE_TEXT } from '@/lib/pageText'
 
 const COLUMNS: Column<ClassSummary>[] = [
-  { key: 'name', header: '반 이름', className: 'font-medium' },
+  {
+    key: 'name',
+    header: '반 이름',
+    className: 'font-semibold',
+    cell: (item) => (
+      <div className="flex items-center gap-2.5">
+        <span
+          aria-hidden
+          className="flex size-7.5 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-soft-foreground"
+        >
+          <BookOpen className="size-4" />
+        </span>
+        {item.name}
+      </div>
+    ),
+  },
   {
     key: 'teacherName',
     header: '담임강사',
-    cell: (item) => item.teacherName ?? <span className="text-muted-foreground">(미지정)</span>,
+    cell: (item) =>
+      item.teacherName ? (
+        <div className="flex items-center gap-2.5">
+          <InitialAvatar name={item.teacherName} />
+          {item.teacherName}
+        </div>
+      ) : (
+        <span className="text-muted-foreground">(미지정)</span>
+      ),
   },
   {
     key: 'studentCount',
     header: '학생 수',
-    className: 'tabular-nums',
+    className: 'text-right tabular-nums',
     cell: (item) => `${item.studentCount}명`,
   },
 ]

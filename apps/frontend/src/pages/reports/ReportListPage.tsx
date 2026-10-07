@@ -6,6 +6,7 @@ import { DataTable, type Column } from '@/components/templates/DataTable'
 import { FilterBar } from '@/components/common/FilterBar'
 import { SearchInput } from '@/components/common/SearchInput'
 import { StatusBadge } from '@/components/common/StatusBadge'
+import { InitialAvatar } from '@/components/common/InitialAvatar'
 import { Button } from '@/components/ui/button'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { REPORT_PAGE_SIZE, useReports } from '@/hooks/useReports'
@@ -21,12 +22,27 @@ const SHARE_LINK_TONE = {
 } as const satisfies Record<ShareLinkStatus, Tone>
 
 const COLUMNS: Column<ReportSummary>[] = [
-  { key: 'studentName', header: '학생명', className: 'font-medium' },
-  { key: 'subjectCount', header: '과목수', cell: (report) => `${report.subjectCount}개` },
+  {
+    key: 'studentName',
+    header: '학생명',
+    className: 'font-semibold',
+    cell: (report) => (
+      <div className="flex items-center gap-2.5">
+        <InitialAvatar name={report.studentName} />
+        {report.studentName}
+      </div>
+    ),
+  },
+  {
+    key: 'subjectCount',
+    header: '과목수',
+    className: 'text-right tabular-nums',
+    cell: (report) => `${report.subjectCount}개`,
+  },
   {
     key: 'createdAt',
     header: '생성일시',
-    className: 'tabular-nums',
+    className: 'tabular-nums text-muted-foreground',
     cell: (report) => formatCreatedDateTime(report.createdAt),
   },
   {
