@@ -33,6 +33,7 @@ import SharedReportPage from '@/pages/share/SharedReportPage'
 import StudentExamDetailPage from '@/pages/students/StudentExamDetailPage'
 import TemplateListPage from '@/pages/messages/TemplateListPage'
 import SubscriptionPage from '@/pages/subscription/SubscriptionPage'
+import DashboardPage from './pages/dashboard/DashboardPage'
 
 function App() {
   return (
@@ -67,7 +68,8 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="students" replace />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardPage />} />
             <Route path="students" element={<StudentListPage />} />
             <Route path="students/new" element={<StudentListPage />} />
             <Route path="students/:studentId" element={<StudentDetailPage />} />

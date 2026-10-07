@@ -105,6 +105,7 @@ export default function ExamDetailPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title={`${exam.name}(${exam.className ?? '삭제된 반'})`}
+        description={`${formatDate(exam.examDate)} · 응시 ${exam.participants.length}명`}
         guide={PAGE_TEXT.EXAM_DETAIL.guide}
         back={{ label: '시험 목록으로', to: listPath }}
         actions={

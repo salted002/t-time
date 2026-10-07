@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useMatch, useNavigate, useParams } from 'react-router-dom'
-import { Plus } from 'lucide-react'
+import { Check, Plus, Users } from 'lucide-react'
 import { PageHeader } from '@/components/templates/PageHeader'
 import { DataTable, type Column } from '@/components/templates/DataTable'
 import { FilterBar } from '@/components/common/FilterBar'
 import { SearchInput } from '@/components/common/SearchInput'
 import { StatusBadge } from '@/components/common/StatusBadge'
+import { InitialAvatar } from '@/components/common/InitialAvatar'
+
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -24,15 +26,20 @@ import { cn } from '@/lib/utils'
 import type { Student, StudentStatus } from '@/types/student'
 import { PAGE_TEXT } from '@/lib/pageText'
 
-const STATUS_FILTERS: { label: string; value: StudentStatus | 'all' }[] = [
-  { label: '전체', value: 'all' },
-  { label: '재원생', value: '재원' },
-  { label: '휴원생', value: '휴원' },
-  { label: '퇴원생', value: '퇴원' },
-]
+const STATUS_OPTIONS: StudentStatus[] = ['재원', '휴원', '퇴원']
 
 const COLUMNS: Column<Student>[] = [
-  { key: 'name', header: '이름', className: 'font-medium' },
+  {
+    key: 'name',
+    header: '이름',
+    className: 'font-medium',
+    cell: (student) => (
+      <span className="flex items-center gap-2.5">
+        <InitialAvatar name={student.name} />
+        {student.name}
+      </span>
+    ),
+  },
   {
     key: 'className',
     header: '반',
@@ -56,7 +63,7 @@ export default function StudentListPage() {
   const { slug } = useParams()
   const isCreateOpen = useMatch('/:slug/students/new') !== null
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<StudentStatus | 'all'>('all')
+  const [statusFilter, setStatusFilter] = useState<StudentStatus[]>([])
   const [classFilter, setClassFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
   const [isBulkOpen, setIsBulkOpen] = useState(false)
@@ -75,10 +82,18 @@ export default function StudentListPage() {
     ...classes.map((item) => ({ value: item.id, label: item.name })),
   ]
 
+  const toggleStatus = (status: StudentStatus) => {
+    setStatusFilter((prev) =>
+      prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status],
+    )
+    setPage(1)
+  }
+
   return (
     <div>
       <PageHeader
         title="학생 관리"
+        icon={Users}
         {...PAGE_TEXT.STUDENT_LIST}
         actions={
           <>
@@ -103,26 +118,27 @@ export default function StudentListPage() {
           placeholder="학생 이름으로 검색"
         />
 
-        <div className="flex items-center gap-1 rounded-lg border bg-card p-1">
-          {STATUS_FILTERS.map((filter) => (
-            <button
-              key={filter.value}
-              type="button"
-              aria-pressed={statusFilter === filter.value}
-              onClick={() => {
-                setStatusFilter(filter.value)
-                setPage(1)
-              }}
-              className={cn(
-                'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                statusFilter === filter.value
-                  ? 'bg-sidebar text-sidebar-foreground'
-                  : 'text-muted-foreground hover:bg-muted',
-              )}
-            >
-              {filter.label}
-            </button>
-          ))}
+        <div role="group" aria-label="상태 필터 (복수 선택)" className="flex gap-2">
+          {STATUS_OPTIONS.map((status) => {
+            const selected = statusFilter.includes(status)
+            return (
+              <button
+                key={status}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => toggleStatus(status)}
+                className={cn(
+                  'inline-flex h-10 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors',
+                  selected
+                    ? 'border-primary bg-brand-soft text-brand-soft-foreground'
+                    : 'border-input bg-card hover:border-primary',
+                )}
+              >
+                {selected && <Check className="size-3.5" />}
+                {status}
+              </button>
+            )
+          })}
         </div>
 
         <Select

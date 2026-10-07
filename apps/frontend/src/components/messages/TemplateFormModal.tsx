@@ -16,6 +16,7 @@ import {
   type SmsTemplate,
   type TemplateFormValues,
 } from '@/types/template'
+import { cn } from '@/lib/utils'
 
 const FORM_ID = 'template-form'
 
@@ -132,22 +133,32 @@ export function TemplateFormModal({ template, onClose, onSaved }: TemplateFormMo
           )}
         </FormField>
 
-        <FormField
-          control={control}
-          name="isDefault"
-          label="기본 템플릿"
-          description="기본 템플릿은 하나만 지정할 수 있습니다. 다른 템플릿이 기본이면 그 설정은 해제됩니다."
-        >
+        <FormField control={control} name="isDefault" label="기본 템플릿">
           {(field) => (
-            <label htmlFor={field.id} className="flex w-fit items-center gap-2 text-sm">
+            <label
+              htmlFor={field.id}
+              className={cn(
+                'flex cursor-pointer items-start gap-3 rounded-lg border-[1.5px] p-3.5 transition-colors',
+                field.value
+                  ? 'border-primary bg-brand-soft'
+                  : 'hover:border-primary/50 hover:bg-muted/50',
+              )}
+            >
               <Checkbox
                 id={field.id}
                 checked={field.value}
                 onCheckedChange={(checked) => field.onChange(checked === true)}
                 disabled={busy}
                 aria-invalid={field['aria-invalid']}
+                className="mt-0.5"
               />
-              이 템플릿을 기본으로 사용
+              <span className="flex flex-col gap-0.5">
+                <span className="text-sm font-semibold">이 템플릿을 기본으로 사용</span>
+                <span className="text-xs leading-relaxed text-muted-foreground">
+                  기본 템플릿은 하나만 지정할 수 있어요. 다른 템플릿이 기본이면 그 설정은
+                  해제됩니다.
+                </span>
+              </span>
             </label>
           )}
         </FormField>

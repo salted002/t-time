@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { MessageSquare, Plus, X } from 'lucide-react'
+import { CircleAlert, Info, MessageSquare, Plus, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/templates/PageHeader'
 import { SectionCard } from '@/components/common/SectionCard'
@@ -161,6 +161,15 @@ function ResultForm({ exam, detailPath }: ResultFormProps) {
 
       <form onSubmit={onSubmit} noValidate>
         <SectionCard>
+          <div className="mb-5 flex items-start gap-2 rounded-md bg-brand-soft px-4 py-3 text-sm leading-relaxed text-brand">
+            <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <p>
+              {isGrade ? '등급' : '점수'}를 비워 두면 <b>미응시</b>로 처리되어 반 통계에서
+              제외됩니다
+              {isGrade ? '.' : ' (0점과 다릅니다).'} x로 응시자에서 제외하고, 아래에서 다시 추가할
+              수 있어요.
+            </p>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -205,6 +214,7 @@ function ResultForm({ exam, detailPath }: ResultFormProps) {
                           type="button"
                           variant="ghost"
                           size="icon-xs"
+                          className="text-muted-foreground hover:text-foreground"
                           aria-label={`${row.studentName} 응시자에서 제외`}
                           onClick={() => setIncluded(rowIndex, false)}
                         >
@@ -250,7 +260,10 @@ function ResultForm({ exam, detailPath }: ResultFormProps) {
                               placeholder="--"
                               aria-label={`${row.studentName} ${subject.name} 점수`}
                               aria-invalid={invalid}
-                              className="ml-auto w-20 text-right tabular-nums"
+                              className={cn(
+                                'ml-auto w-20 text-right tabular-nums',
+                                invalid && 'bg-destructive-soft text-destructive',
+                              )}
                             />
                           )}
                         </TableCell>
@@ -292,11 +305,17 @@ function ResultForm({ exam, detailPath }: ResultFormProps) {
           </Table>
 
           {errorMessages.length > 0 && (
-            <ul role="alert" className="mt-4 flex flex-col gap-1 text-sm text-destructive">
-              {errorMessages.map((message) => (
-                <li key={message}>{message}</li>
-              ))}
-            </ul>
+            <div
+              role="alert"
+              className="mt-4 flex items-start gap-2 rounded-md bg-destructive-soft px-4 py-3 text-sm text-destructive"
+            >
+              <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <ul className="flex flex-col gap-1">
+                {errorMessages.map((message) => (
+                  <li key={message}>{message}</li>
+                ))}
+              </ul>
+            </div>
           )}
 
           {excludedRows.length > 0 && (
@@ -319,13 +338,23 @@ function ResultForm({ exam, detailPath }: ResultFormProps) {
             </div>
           )}
 
-          <div className="mt-8 flex justify-end gap-2 border-t pt-5">
-            <Button type="button" variant="outline" onClick={handleCancel} disabled={isSubmitting}>
-              취소
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              저장
-            </Button>
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t pt-5">
+            <p className="text-sm text-muted-foreground">
+              {isDirty ? '변경 사항이 있어요 · 저장하기 전에 확인하세요' : ''}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancel}
+                disabled={isSubmitting}
+              >
+                취소
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                저장
+              </Button>
+            </div>
           </div>
         </SectionCard>
       </form>

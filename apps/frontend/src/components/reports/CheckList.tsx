@@ -1,4 +1,5 @@
 import { Checkbox } from '@/components/ui/checkbox'
+import { cn } from '@/lib/utils'
 
 export interface CheckListItem {
   id: string
@@ -45,9 +46,16 @@ export function CheckList({ items, checkedIds, onChange, emptyText }: CheckListP
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
           <li key={item.id}>
-            <label className="flex cursor-pointer items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm hover:bg-muted/50">
+            <label
+              className={cn(
+                'flex cursor-pointer items-center gap-3 rounded-lg border-[1.5px] px-3.5 py-3 text-sm transition-colors',
+                checked.has(item.id)
+                  ? 'border-primary bg-brand-soft'
+                  : 'bg-card hover:border-primary/50 hover:bg-muted/50',
+              )}
+            >
               <Checkbox checked={checked.has(item.id)} onCheckedChange={() => toggle(item.id)} />
-              <span className="font-medium">{item.label}</span>
+              <span className="font-semibold">{item.label}</span>
               {item.description && (
                 <span className="text-xs text-muted-foreground">{item.description}</span>
               )}
