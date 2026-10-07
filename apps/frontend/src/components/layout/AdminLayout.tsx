@@ -23,7 +23,7 @@ export function AdminLayout() {
         brand={{ name: '티타임', subtitle: '운영자 페이지' }}
         account={{ name: '플랫폼', role: '운영자' }}
       />
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-3 bg-sidebar px-6 text-sidebar-foreground">
           <SidebarTrigger className="md:hidden" />
           <p className="text-sm font-semibold">티타임 운영자 페이지</p>

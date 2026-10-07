@@ -116,7 +116,7 @@ export default function SignupAccountStep({
           <div className="mb-6 px-2">
             <Stepper steps={['학원 정보', '계정 정보', '완료']} current={1} />
           </div>
-          <form onSubmit={onSubmit} className="space-y-5">
+          <form onSubmit={onSubmit} noValidate className="space-y-5">
             <FormField control={control} name="name" label="관리자 이름" required>
               {(field) => <Input {...field} placeholder="김선주" />}
             </FormField>

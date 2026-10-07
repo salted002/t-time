@@ -226,7 +226,7 @@ export default function AdminAcademyEditPage() {
       )}
 
       {detail && (
-        <form id={FORM_ID} onSubmit={onSubmit} className="flex max-w-xl flex-col gap-6">
+        <form id={FORM_ID} onSubmit={onSubmit} noValidate className="flex max-w-xl flex-col gap-6">
           <SectionCard title="학원 정보">
             <div className="space-y-5">
               <FormField control={control} name="academyName" label="학원명" required>

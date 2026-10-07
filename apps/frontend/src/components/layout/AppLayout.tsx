@@ -42,7 +42,7 @@ function AppLayoutContent() {
         brand={{ name: academy.name, subtitle: '관리자', logoUrl: academy.logoUrl }}
         account={{ name: userName, role: '관리자' }}
       />
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <AppHeader userName={userName} userEmail={user?.email ?? ''} onLogout={handleLogout} />
         <div className="px-4 py-6 md:px-8">
           <Outlet />
