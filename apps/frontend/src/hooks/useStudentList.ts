@@ -1,68 +1,78 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { api } from '@/lib/api';
-import type { Student, StudentStatus } from '@/types/student';
+import { useEffect, useState } from 'react'
+import axios from 'axios'
+import { api } from '@/lib/api'
+import type { Student, StudentStatus } from '@/types/student'
 
-export const STUDENT_PAGE_SIZE = 20;
+export const STUDENT_PAGE_SIZE = 20
 
 interface StudentListParams {
-  q: string;
-  status: StudentStatus | 'all';
-  classId: string | 'all';
-  page: number;
+  q: string
+  status: StudentStatus[]
+  classId: string | 'all'
+  page: number
 }
 
 interface StudentListResponse {
-  students: Student[];
-  count: number;
+  students: Student[]
+  count: number
 }
 
 interface StudentListResult {
-  key: string;
-  students: Student[];
-  count: number;
-  error: string | null;
+  key: string
+  students: Student[]
+  count: number
+  error: string | null
 }
 
 export function useStudentList({ q, status, classId, page }: StudentListParams) {
-  const [result, setResult] = useState<StudentListResult | null>(null);
-  const [version, setVersion] = useState(0);
-  const requestKey = JSON.stringify({ q, status, classId, page, version });
+  const [result, setResult] = useState<StudentListResult | null>(null)
+  const [version, setVersion] = useState(0)
+  const requestKey = JSON.stringify({ q, status, classId, page, version })
 
   useEffect(() => {
-    let ignore = false;
-    const key = JSON.stringify({ q, status, classId, page, version });
+    let ignore = false
+    const key = JSON.stringify({ q, status, classId, page, version })
     const params = {
       page,
       size: STUDENT_PAGE_SIZE,
       ...(q && { q }),
-      ...(status !== 'all' && { status }),
+      ...(status.length > 0 && { status: status.join(',') }),
       ...(classId !== 'all' && { classId }),
-    };
+    }
 
     api
       .get<StudentListResponse>('/students', { params })
       .then((response) => {
         if (!ignore) {
-          setResult({ key, students: response.data.students, count: response.data.count, error: null });
+          setResult({
+            key,
+            students: response.data.students,
+            count: response.data.count,
+            error: null,
+          })
         }
       })
       .catch((error: unknown) => {
         if (!ignore) {
           const message = axios.isAxiosError(error)
             ? (error.response?.data as { message?: string } | undefined)?.message
-            : undefined;
-          setResult({ key, students: [], count: 0, error: message ?? '학생 목록을 불러오지 못했습니다.' });
+            : undefined
+          setResult({
+            key,
+            students: [],
+            count: 0,
+            error: message ?? '학생 목록을 불러오지 못했습니다.',
+          })
         }
-      });
+      })
 
     return () => {
-      ignore = true;
-    };
-  }, [q, status, classId, page, version]);
+      ignore = true
+    }
+  }, [q, status, classId, page, version])
 
   // 응답이 현재 조건과 다르면 아직 요청 중인 상태
-  const loading = result?.key !== requestKey;
+  const loading = result?.key !== requestKey
 
   return {
     students: loading ? [] : (result?.students ?? []),
@@ -70,5 +80,5 @@ export function useStudentList({ q, status, classId, page }: StudentListParams) 
     loading,
     error: loading ? null : (result?.error ?? null),
     reload: () => setVersion((value) => value + 1),
-  };
+  }
 }

@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react'
+import { LayoutDashboard, type LucideIcon } from 'lucide-react'
 import { Building2 } from 'lucide-react'
 import {
   Users,
@@ -6,7 +6,7 @@ import {
   BarChart3,
   School,
   MessageSquareText,
-  History,
+  Send,
   CreditCard,
   Settings,
 } from 'lucide-react'
@@ -17,11 +17,14 @@ export interface NavItem {
   icon: LucideIcon
 }
 export interface NavSection {
-  label: string
+  label?: string
   items: NavItem[]
 }
 
 export const ACADEMY_NAV: NavSection[] = [
+  {
+    items: [{ label: '대시보드', to: 'dashboard', icon: LayoutDashboard }],
+  },
   {
     label: '학사 관리',
     items: [
@@ -35,7 +38,7 @@ export const ACADEMY_NAV: NavSection[] = [
     label: '발송 관리',
     items: [
       { label: '템플릿 관리', to: 'templates', icon: MessageSquareText },
-      { label: '발송 이력', to: 'message-logs', icon: History },
+      { label: '발송 이력', to: 'message-logs', icon: Send },
     ],
   },
   {

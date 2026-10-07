@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { Check, Copy, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/templates/PageHeader'
@@ -74,6 +74,7 @@ interface ReportDetailViewProps {
 }
 
 function ReportDetailView({ report, backPath }: ReportDetailViewProps) {
+  const { slug } = useParams<{ slug: string }>()
   const { student, loading: studentLoading } = useStudentDetail(report.studentId)
 
   const [selected, setSelected] = useState(report.subjectNames[0] ?? '')
@@ -191,8 +192,18 @@ function ReportDetailView({ report, backPath }: ReportDetailViewProps) {
       <SectionCard title="AI 피드백">
         <LockedFeatureOverlay
           locked={!report.subscribed}
-          title="구독 전용 기능이에요"
-          description="구독하면 AI 과목별 피드백을 리포트에 담을 수 있어요."
+          title="AI PRO 전용 기능이에요"
+          description="AI PRO를 구독하면 과목별 AI 피드백을 리포트에 담을 수 있어요."
+          action={
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<Link to={`/${slug}/subscription`} />}
+            >
+              구독 관리로
+            </Button>
+          }
         >
           <div className="flex flex-col gap-2 p-4">
             <h3 className="text-sm font-semibold">AI 과목별 피드백 · {subjectName}</h3>

@@ -3,7 +3,7 @@ import type { ChangeEvent } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { isAxiosError } from 'axios'
-import { ImagePlus, X } from 'lucide-react'
+import { Settings, ImagePlus, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/templates/PageHeader'
@@ -138,6 +138,7 @@ export default function AcademySettingsPage() {
     <div>
       <PageHeader
         title="학원 설정"
+        icon={Settings}
         {...PAGE_TEXT.ACADEMY_SETTINGS}
         actions={
           <>

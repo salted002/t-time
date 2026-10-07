@@ -60,7 +60,15 @@ export function MessageLogDetailModal({ logId, onClose }: MessageLogDetailModalP
                 </StatusBadge>
               ),
             },
-            { label: '메시지(전체)', value: data.message, span: 2 },
+            {
+              label: '메시지(전체)',
+              value: (
+                <div className="rounded-xl rounded-bl-sm border bg-muted/50 px-4 py-3.5 text-sm leading-relaxed font-normal">
+                  {data.message}
+                </div>
+              ),
+              span: 2,
+            },
             {
               label: '보낸 링크',
               value: data.sentLink && (
@@ -90,7 +98,7 @@ export function MessageLogDetailModal({ logId, onClose }: MessageLogDetailModalP
               value: data.linkedReport && (
                 <Link
                   to={`/${slug}/reports/${data.linkedReport.reportId}`}
-                  className="inline-flex items-center gap-1 text-primary underline-offset-4 hover:underline"
+                  className="inline-flex items-center gap-1 font-semibold text-primary underline-offset-4 hover:underline"
                 >
                   {data.linkedReport.studentName ?? '학생'} 리포트
                   <ArrowRight className="size-3.5" />

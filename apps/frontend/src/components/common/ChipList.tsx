@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
 
@@ -20,7 +21,10 @@ export function ChipList({ items, onRemove, children }: ChipListProps) {
       {items.map((item) => (
         <span
           key={item.id}
-          className="inline-flex items-center gap-1 rounded-full bg-brand-soft py-1 pr-1.5 pl-3 text-xs font-semibold text-brand-soft-foreground"
+          className={cn(
+            'inline-flex items-center gap-1 rounded-full bg-brand-soft py-1 text-xs font-semibold text-brand-soft-foreground',
+            onRemove ? 'pr-1.5 pl-3' : 'px-3',
+          )}
         >
           {item.label}
           {onRemove && (
