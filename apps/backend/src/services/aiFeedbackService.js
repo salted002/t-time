@@ -6,7 +6,7 @@ const {
   buildDefaultUser,
   cleanHistory,
 } = require('./prompt/subjectPrompt')
-const { OVERALL_SYSTEM_PROMPT, buildOverallUser } = require('../prompt/overallPrompt')
+const { OVERALL_SYSTEM_PROMPT, buildOverallUser } = require('./prompt/overallPrompt')
 
 const client = new OpenAI({
   apiKey: env.ai.apiKey,
