@@ -133,7 +133,7 @@ export default function SignupAcademyStep({
             </FormField>
 
             <FormField control={control} name="representativePhone" label="대표연락처" required>
-              {(field) => <Input {...field} placeholder="032-123-4567" />}
+              {(field) => <Input {...field} placeholder="0321234567" />}
             </FormField>
 
             <FormField
@@ -218,7 +218,7 @@ export default function SignupAcademyStep({
 
             <div className="space-y-2">
               <FormField control={control} name="smsSenderNumber" label="SMS 발신번호">
-                {(field) => <Input {...field} placeholder="032-123-4567" />}
+                {(field) => <Input {...field} placeholder="0321234567" />}
               </FormField>
               <div className="rounded-lg bg-info-soft px-4 py-3 text-xs leading-relaxed text-info">
                 대표 발신번호는 SMS 발신 승인 신청 시 필요하며 학원 설정에서 언제든 입력할 수
