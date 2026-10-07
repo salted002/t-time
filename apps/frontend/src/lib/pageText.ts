@@ -7,6 +7,11 @@
  */
 
 export const PAGE_TEXT = {
+  // 대시보드
+  DASHBOARD: {
+    guide: '학원의 학생 수, 시험, 리포트, 최근 발송 이력을 한눈에 볼 수 있는 요약 화면입니다.',
+  },
+
   // 학생
   STUDENT_LIST: {
     guide: '학생을 이름으로 검색하고, 상태·반으로 필터링해 볼 수 있습니다.',

@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react'
+import { LayoutDashboard, type LucideIcon } from 'lucide-react'
 import { Building2 } from 'lucide-react'
 import {
   Users,
@@ -17,11 +17,14 @@ export interface NavItem {
   icon: LucideIcon
 }
 export interface NavSection {
-  label: string
+  label?: string
   items: NavItem[]
 }
 
 export const ACADEMY_NAV: NavSection[] = [
+  {
+    items: [{ label: '대시보드', to: 'dashboard', icon: LayoutDashboard }],
+  },
   {
     label: '학사 관리',
     items: [

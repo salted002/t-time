@@ -41,6 +41,7 @@ function AppLayoutContent() {
         basePath={`/${slug}`}
         brand={{ name: academy.name, subtitle: '관리자', logoUrl: academy.logoUrl }}
         account={{ name: userName, role: '관리자' }}
+        plan={me?.academy.subscriptionStatus}
       />
       <SidebarInset>
         <AppHeader userName={userName} userEmail={user?.email ?? ''} onLogout={handleLogout} />
