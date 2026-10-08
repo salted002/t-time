@@ -19,6 +19,8 @@ import { useClassList } from '@/hooks/useClassList'
 import { STUDENT_STATUS_TONE } from '@/lib/constants'
 import { getErrorMessage } from '@/lib/errors'
 import type { StudentStatus } from '@/types/student'
+import { MOBILE_REGEX, onlyDigits } from '@/lib/phone'
+import { PhoneInput } from '../common/PhoneInput'
 
 const NO_CLASS = '__none__'
 const STATUS_ITEMS = (Object.keys(STUDENT_STATUS_TONE) as StudentStatus[]).map((status) => ({
@@ -32,7 +34,12 @@ const studentCreateSchema = z.object({
   status: z.enum(['재원', '휴원', '퇴원']),
   school: z.string().trim().min(1, '학교를 입력해주세요.'),
   grade: z.string().trim().min(1, '학년을 입력해주세요.'),
-  parentPhone: z.string().trim().min(1, '학부모 연락처를 입력해주세요.'),
+  parentPhone: z
+    .string()
+    .trim()
+    .min(1, '학부모 연락처를 입력해주세요.')
+    .refine((v) => MOBILE_REGEX.test(onlyDigits(v)), '올바른 휴대폰 번호를 입력해주세요.')
+    .transform(onlyDigits),
   enrolledAt: z.string().nullable(),
 })
 
@@ -146,7 +153,7 @@ export function StudentCreateDialog({ onClose, onCreated }: StudentCreateDialogP
         </FormField>
 
         <FormField control={form.control} name="parentPhone" label="학부모연락처" required>
-          {(field) => <Input {...field} inputMode="tel" />}
+          {(field) => <PhoneInput {...field} placeholder="010-1234-5678" />}
         </FormField>
 
         <FormField control={form.control} name="enrolledAt" label="등록일자">

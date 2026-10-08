@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { FormDialog } from '@/components/common/FormDialog'
 import { SmsMessageEditor } from '@/components/reports/SmsMessageEditor'
-import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { reportSendApi } from '@/api/reportSendApi'
 import { useTemplates } from '@/hooks/useTemplates'
 import { getErrorMessage } from '@/lib/errors'
 import { getDefaultDraft, isValidSmsMessage, isValidSmsPhone } from '@/lib/smsTemplate'
 import type { SmsDraft } from '@/types/reportSend'
+import { PhoneInput } from '../common/PhoneInput'
+import { onlyDigits } from '@/lib/phone'
 
 interface SendSingleModalProps {
   reportId: string
@@ -49,7 +50,7 @@ export function SendSingleModal({
     setSending(true)
     try {
       const { results } = await reportSendApi.send([
-        { reportId, recipientPhone: phone.trim(), message: draft.message.trim() },
+        { reportId, recipientPhone: onlyDigits(phone), message: draft.message.trim() },
       ])
       const result = results[0]
       if (result?.status === '성공') {
@@ -79,11 +80,11 @@ export function SendSingleModal({
           <label htmlFor="send-single-phone" className="text-sm font-medium">
             수신번호
           </label>
-          <Input
+          <PhoneInput
             id="send-single-phone"
             value={phone}
             onChange={(event) => setPhoneInput(event.target.value)}
-            placeholder="01012345678"
+            placeholder="010-1234-5678"
             inputMode="tel"
             aria-invalid={phoneInvalid}
             className="max-w-xs"

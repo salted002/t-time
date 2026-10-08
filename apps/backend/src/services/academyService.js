@@ -3,6 +3,7 @@ const db = require('../db/models')
 const { hashPassword } = require('../utils/passwordUtil')
 const { issueAcademyToken } = require('../utils/jwtUtil')
 const { getSlugError } = require('../utils/slugUtil')
+const { onlyDigits, normalizePhone, PHONE_PATTERN } = require('../utils/phoneUtil')
 
 function throwError(statusCode, message) {
   const error = new Error(message)
@@ -48,15 +49,21 @@ async function signup(signupData, logoFilename) {
       academyName,
       businessNumber,
       ownerName,
-      phone,
+      phone: rawPhone,
       slug,
       address,
-      senderNumber,
+      senderNumber: rawSender,
       name,
       email,
       password,
       passwordConfirm,
     } = signupData
+
+    const phone = onlyDigits(rawPhone)
+    const senderNumber = onlyDigits(rawSender)
+    if (phone && !PHONE_PATTERN.test(phone)) throwError(400, '대표연락처 형식이 올바르지 않습니다.')
+    if (senderNumber && !PHONE_PATTERN.test(senderNumber))
+      throwError(400, '발신번호 형식이 올바르지 않습니다.')
 
     const requiredFields = {
       academyName,
@@ -133,7 +140,14 @@ async function signup(signupData, logoFilename) {
 
 async function updateAcademy(academyId, updateData, file) {
   try {
-    const { phone, address, slug, senderNumber } = updateData
+    const { phone: rawPhone, address, slug, senderNumber: rawSender } = updateData
+
+    const phone = normalizePhone(rawPhone)
+    const senderNumber = normalizePhone(rawSender)
+
+    if (phone && !PHONE_PATTERN.test(phone)) throwError(400, '대표연락처 형식이 올바르지 않습니다.')
+    if (senderNumber && !PHONE_PATTERN.test(senderNumber))
+      throwError(400, '발신번호 형식이 올바르지 않습니다.')
 
     const academy = await db.Academy.findOne({ where: { id: academyId, deletedAt: null } })
     if (!academy) throwError(404, '학원을 찾을 수 없습니다.')

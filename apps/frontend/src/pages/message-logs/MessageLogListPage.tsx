@@ -8,6 +8,7 @@ import { StatusBadge } from '@/components/common/StatusBadge'
 import { messageLogApi } from '@/api/messageLogApi'
 import { useFetch } from '@/hooks/useFetch'
 import { formatCreatedDateTime } from '@/lib/format'
+import { formatPhone } from '@/lib/phone'
 import type { MessageLogSummary } from '@/types/messageLog'
 import { PAGE_TEXT } from '@/lib/pageText'
 
@@ -31,7 +32,12 @@ const COLUMNS: Column<MessageLogSummary>[] = [
       </div>
     ),
   },
-  { key: 'recipientPhone', header: '수신번호', className: 'tabular-nums whitespace-nowrap' },
+  {
+    key: 'recipientPhone',
+    header: '수신번호',
+    className: 'tabular-nums whitespace-nowrap',
+    cell: (log) => formatPhone(log.recipientPhone),
+  },
   {
     key: 'status',
     header: '발송결과',

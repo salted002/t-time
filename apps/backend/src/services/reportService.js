@@ -1,6 +1,7 @@
 const { Op } = require('sequelize')
 const db = require('../db/models')
 const crypto = require('crypto')
+const { MOBILE_PATTERN, onlyDigits } = require('../utils/phoneUtil')
 const examStatsService = require('./examStatsService')
 const aiFeedbackService = require('./aiFeedbackService')
 const smsService = require('./smsService')
@@ -8,8 +9,6 @@ const smsService = require('./smsService')
 const RECENT_TREND_LIMIT = 10 // 리포트는 학생 성적탭(6회)과 다르게 "최근 10회" 기준
 const SHARE_LINK_TTL_MS = 14 * 24 * 60 * 60 * 1000 // 2주
 const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL
-
-const PHONE_PATTERN = /^01[016789]-?\d{3,4}-?\d{4}$/
 
 function throwError(statusCode, message) {
   const error = new Error(message)
@@ -785,14 +784,15 @@ async function send({ academyId, items }) {
   const results = []
 
   for (const item of items) {
-    const { reportId, recipientPhone, message } = item
+    const { reportId, message } = item
+    const recipientPhone = onlyDigits(item.recipientPhone)
 
     try {
       if (typeof message !== 'string' || !message.trim()) {
         throwError(400, '메시지를 입력해 주세요.')
       }
 
-      if (!PHONE_PATTERN.test(recipientPhone)) {
+      if (!MOBILE_PATTERN.test(recipientPhone)) {
         throwError(400, '수신번호 형식 오류')
       }
 

@@ -1,7 +1,7 @@
 import type { SmsDraft } from '@/types/reportSend'
 import type { SmsTemplate } from '@/types/template'
+import { MOBILE_REGEX, onlyDigits } from './phone'
 
-export const SMS_PHONE_PATTERN = /^01[016789]-?\d{3,4}-?\d{4}$/
 export const SMS_SHORT_BYTES = 90
 export const SMS_MAX_BYTES = 2000
 
@@ -20,7 +20,7 @@ export function getSmsBytes(message: string, link: string) {
 }
 
 export function isValidSmsPhone(phone: string) {
-  return SMS_PHONE_PATTERN.test(phone.trim())
+  return MOBILE_REGEX.test(onlyDigits(phone))
 }
 
 export function isValidSmsMessage(message: string, link: string) {

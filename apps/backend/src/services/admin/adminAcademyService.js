@@ -3,6 +3,7 @@ const db = require('../../db/models')
 const { hashPassword } = require('../../utils/passwordUtil')
 const { removeFile: removeLogoFile } = require('../../utils/storageUtil')
 const { getSlugError } = require('../../utils/slugUtil')
+const { normalizePhone } = require('../../utils/phoneUtil')
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const MIN_PASSWORD_LENGTH = 8 // 프런트(types/account.ts)와 같은 기준
@@ -91,11 +92,11 @@ async function update(academyId, updateData, file) {
   try {
     const name = trimmed(updateData.name)
     const slug = trimmed(updateData.slug)
-    const phone = trimmed(updateData.phone)
+    const phone = normalizePhone(trimmed(updateData.phone))
     const address = trimmed(updateData.address)
     const businessNumber = trimmed(updateData.businessNumber)
     const ownerName = trimmed(updateData.ownerName)
-    const senderNumber = trimmed(updateData.senderNumber)
+    const senderNumber = normalizePhone(trimmed(updateData.senderNumber))
     const userName = trimmed(updateData.userName)
     const userEmail = trimmed(updateData.userEmail)
     const { userPassword } = updateData // 비밀번호는 공백이 의미 있을 수 있어 값은 trim하지 않는다

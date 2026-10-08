@@ -18,6 +18,7 @@ import { api, getToken } from '@/lib/api'
 import { academySettingsSchema } from '@/types/academy'
 import type { AcademySettingsFormValues } from '@/types/academy'
 import { PAGE_TEXT } from '@/lib/pageText'
+import { PhoneInput } from '@/components/common/PhoneInput'
 
 const FORM_ID = 'academy-settings-form'
 
@@ -205,7 +206,7 @@ export default function AcademySettingsPage() {
           </FormField>
 
           <FormField control={control} name="representativePhone" label="대표 연락처">
-            {(field) => <Input {...field} placeholder="032-123-4567" />}
+            {(field) => <PhoneInput {...field} placeholder="032-123-4567" />}
           </FormField>
 
           <FormField control={control} name="address" label="주소">
@@ -223,7 +224,7 @@ export default function AcademySettingsPage() {
           </FormField>
 
           <FormField control={control} name="smsSenderNumber" label="대표번호 (SMS 발신번호)">
-            {(field) => <Input {...field} placeholder="032-123-4567" />}
+            {(field) => <PhoneInput {...field} placeholder="032-123-4567" />}
           </FormField>
         </form>
       </SectionCard>

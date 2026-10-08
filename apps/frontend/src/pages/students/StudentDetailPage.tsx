@@ -19,6 +19,7 @@ import { STUDENT_STATUS_TONE } from '@/lib/constants'
 import { getErrorMessage } from '@/lib/errors'
 import { formatDate } from '@/lib/formatDate'
 import { PAGE_TEXT } from '@/lib/pageText'
+import { formatPhone } from '@/lib/phone'
 
 export default function StudentDetailPage() {
   const { slug, studentId } = useParams()
@@ -167,7 +168,7 @@ export default function StudentDetailPage() {
                       </StatusBadge>
                     ),
                   },
-                  { label: '학부모연락처', value: student.parentPhone },
+                  { label: '학부모연락처', value: formatPhone(student.parentPhone) },
                   { label: '등록일자', value: formatDate(student.enrolledAt) },
                 ]}
               />

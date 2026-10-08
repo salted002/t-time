@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/select'
 import { useClassList } from '@/hooks/useClassList'
 import type { Student, StudentStatus } from '@/types/student'
+import { MOBILE_REGEX, onlyDigits } from '@/lib/phone'
+import { PhoneInput } from '../common/PhoneInput'
 
 const STATUSES: StudentStatus[] = ['재원', '휴원', '퇴원']
 const NO_CLASS = '__none__'
@@ -25,7 +27,12 @@ const studentEditSchema = z.object({
   grade: z.string().trim().min(1, '학년을 입력해주세요.'),
   classId: z.string(),
   status: z.enum(['재원', '휴원', '퇴원']),
-  parentPhone: z.string().trim().min(1, '학부모 연락처를 입력해주세요.'),
+  parentPhone: z
+    .string()
+    .trim()
+    .min(1, '학부모 연락처를 입력해주세요.')
+    .refine((v) => MOBILE_REGEX.test(onlyDigits(v)), '올바른 휴대폰 번호를 입력해주세요.')
+    .transform(onlyDigits),
   enrolledAt: z.string().nullable(),
 })
 
@@ -124,7 +131,7 @@ export function StudentEditForm({
         </FormField>
 
         <FormField control={control} name="parentPhone" label="학부모연락처" required>
-          {(field) => <Input {...field} inputMode="tel" />}
+          {(field) => <PhoneInput {...field} placeholder="010-1234-5678" />}
         </FormField>
 
         <FormField control={control} name="enrolledAt" label="등록일자">
