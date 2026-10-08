@@ -24,6 +24,8 @@ import { getDefaultDraft, isValidSmsMessage, isValidSmsPhone } from '@/lib/smsTe
 import type { SmsDraft } from '@/types/reportSend'
 import type { SavedReport } from '@/types/report'
 import { formatFullDate } from '@/lib/format'
+import { PhoneInput } from '../common/PhoneInput'
+import { onlyDigits } from '@/lib/phone'
 
 interface RowEdit {
   phone?: string
@@ -120,7 +122,7 @@ export function SendMultiModal({ reports, onClose }: SendMultiModalProps) {
       const { results, message } = await reportSendApi.send(
         checked.map((row) => ({
           reportId: row.report.id,
-          recipientPhone: row.phone.trim(),
+          recipientPhone: onlyDigits(row.phone),
           message: row.draft.message.trim(),
         })),
       )
@@ -215,7 +217,7 @@ export function SendMultiModal({ reports, onClose }: SendMultiModalProps) {
                         {sent && <p className="text-xs font-normal">발송 완료</p>}
                       </TableCell>
                       <TableCell>
-                        <Input
+                        <PhoneInput
                           value={row.phone}
                           onChange={(event) => updateEdit(id, { phone: event.target.value })}
                           disabled={sent || sending}

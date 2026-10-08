@@ -15,7 +15,7 @@ const dash = (value: string | null) => value ?? <span className="text-muted-fore
 // 학생수 컬럼은 백엔드가 재원 학생만 세어서 내려주므로 "재원수"로 표시한다.
 const COLUMNS: Column<AdminAcademy>[] = [
   { key: 'name', header: '학원명', className: 'font-medium' },
-  { key: 'phone', header: '대표연락처', cell: (academy) => dash(academy.phone) },
+  { key: 'phone', header: '대표연락처', cell: (academy) => dash(formatPhone(academy.phone)) },
   { key: 'ownerName', header: '대표자명', cell: (academy) => dash(academy.ownerName) },
   { key: 'studentCount', header: '재원수' },
   { key: 'loginEmail', header: '로그인이메일', cell: (academy) => dash(academy.loginEmail) },

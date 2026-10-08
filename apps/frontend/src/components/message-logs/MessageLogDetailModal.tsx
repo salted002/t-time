@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { messageLogApi } from '@/api/messageLogApi'
 import { useFetch } from '@/hooks/useFetch'
 import { formatCreatedDateTime } from '@/lib/format'
+import { formatPhone } from '@/lib/phone'
 
 interface MessageLogDetailModalProps {
   /** null이면 닫힘 */
@@ -50,7 +51,7 @@ export function MessageLogDetailModal({ logId, onClose }: MessageLogDetailModalP
             { label: '수신자', value: data.studentName },
             {
               label: '수신번호',
-              value: <span className="tabular-nums">{data.recipientPhone}</span>,
+              value: <span className="tabular-nums">{formatPhone(data.recipientPhone)}</span>,
             },
             {
               label: '발송결과',

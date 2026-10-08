@@ -25,6 +25,7 @@ import { STUDENT_STATUS_TONE } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { Student, StudentStatus } from '@/types/student'
 import { PAGE_TEXT } from '@/lib/pageText'
+import { formatPhone } from '@/lib/phone'
 
 const STATUS_OPTIONS: StudentStatus[] = ['재원', '휴원', '퇴원']
 
@@ -54,7 +55,7 @@ const COLUMNS: Column<Student>[] = [
   },
   { key: 'school', header: '학교' },
   { key: 'grade', header: '학년' },
-  { key: 'parentPhone', header: '학부모연락처' },
+  { key: 'parentPhone', header: '학부모연락처', cell: (s) => formatPhone(s.parentPhone) },
   { key: 'enrolledAt', header: '등록일자' },
 ]
 

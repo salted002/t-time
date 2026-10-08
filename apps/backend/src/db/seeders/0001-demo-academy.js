@@ -598,7 +598,7 @@ async function up(queryInterface) {
   }
   const makePhone = () => {
     for (;;) {
-      const phone = `010-${intBetween(2000, 9999)}-${intBetween(1000, 9999)}`
+      const phone = `010${intBetween(2000, 9999)}${intBetween(1000, 9999)}`
       if (!usedPhones.has(phone)) {
         usedPhones.add(phone)
         return phone
