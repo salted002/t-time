@@ -38,28 +38,35 @@ function errorHandler(err, req, res, next) {
       err.code === 'LIMIT_FILE_SIZE'
         ? '파일 크기는 5MB를 넘을 수 없습니다.'
         : '파일 업로드 요청이 올바르지 않습니다.'
-    return res.status(400).json({ success: false, message })
+    return res.status(400).json({ success: false, message: message })
   } else if (err instanceof Sequelize.UniqueConstraintError) {
     return res.status(409).json({
       success: false,
-      message: 'Unique constraint violation: duplicate data',
+      message: 'DB단 중복 데이터가 존재합니다.',
     })
   } else if (err instanceof Sequelize.ValidationError) {
     return res.status(400).json({
       success: false,
-      message: 'Validation error: invalid data format',
+      message: '잘못된 데이터 형식이 존재합니다.',
     })
   } else if (err instanceof Sequelize.ForeignKeyConstraintError) {
-    return res.status(400).json({ success: false, message: 'Foreign key constraint error' })
+    return res.status(400).json({
+      success: false,
+      message: 'DB단 참조 무결성 에러가 발생했습니다.',
+    })
   } else if (
     err instanceof Sequelize.ConnectionError ||
     err instanceof Sequelize.ConnectionRefusedError
   ) {
-    return res.status(500).json({ success: false, message: 'Database connection error' })
+    return res.status(500).json({ success: false, message: '데이터베이스 연결에 실패했습니다.' })
   } else if (err instanceof Sequelize.TimeoutError) {
-    return res.status(504).json({ success: false, message: 'Internal Server Error' })
+    return res
+      .status(504)
+      .json({ success: false, message: '서버에 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.' })
   } else {
-    return res.status(500).json({ success: false, message: 'Internal Server Error' })
+    return res
+      .status(500)
+      .json({ success: false, message: '서버에 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.' })
   }
 }
 
