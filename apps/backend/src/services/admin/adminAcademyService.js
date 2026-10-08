@@ -95,8 +95,8 @@ async function update(academyId, updateData, file) {
     const phone = normalizePhone(trimmed(updateData.phone))
     const address = trimmed(updateData.address)
     const businessNumber = trimmed(updateData.businessNumber)
-    const ownerName = normalizePhone(trimmed(updateData.ownerName))
-    const senderNumber = trimmed(updateData.senderNumber)
+    const ownerName = trimmed(updateData.ownerName)
+    const senderNumber = normalizePhone(trimmed(updateData.senderNumber))
     const userName = trimmed(updateData.userName)
     const userEmail = trimmed(updateData.userEmail)
     const { userPassword } = updateData // 비밀번호는 공백이 의미 있을 수 있어 값은 trim하지 않는다

@@ -20,6 +20,7 @@ import { STUDENT_STATUS_TONE } from '@/lib/constants'
 import { getErrorMessage } from '@/lib/errors'
 import type { StudentStatus } from '@/types/student'
 import { MOBILE_REGEX, onlyDigits } from '@/lib/phone'
+import { PhoneInput } from '../common/PhoneInput'
 
 const NO_CLASS = '__none__'
 const STATUS_ITEMS = (Object.keys(STUDENT_STATUS_TONE) as StudentStatus[]).map((status) => ({
@@ -152,7 +153,7 @@ export function StudentCreateDialog({ onClose, onCreated }: StudentCreateDialogP
         </FormField>
 
         <FormField control={form.control} name="parentPhone" label="학부모연락처" required>
-          {(field) => <Input {...field} />}
+          {(field) => <PhoneInput {...field} placeholder="010-1234-5678" />}
         </FormField>
 
         <FormField control={form.control} name="enrolledAt" label="등록일자">

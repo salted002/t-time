@@ -16,6 +16,7 @@ import {
 import { useClassList } from '@/hooks/useClassList'
 import type { Student, StudentStatus } from '@/types/student'
 import { MOBILE_REGEX, onlyDigits } from '@/lib/phone'
+import { PhoneInput } from '../common/PhoneInput'
 
 const STATUSES: StudentStatus[] = ['재원', '휴원', '퇴원']
 const NO_CLASS = '__none__'
@@ -130,7 +131,7 @@ export function StudentEditForm({
         </FormField>
 
         <FormField control={control} name="parentPhone" label="학부모연락처" required>
-          {(field) => <Input {...field} />}
+          {(field) => <PhoneInput {...field} placeholder="010-1234-5678" />}
         </FormField>
 
         <FormField control={control} name="enrolledAt" label="등록일자">

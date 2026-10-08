@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/templates/PageHeader'
 import { DataTable, type Column } from '@/components/templates/DataTable'
 import { getErrorMessage } from '@/lib/errors'
 import { PAGE_TEXT } from '@/lib/pageText'
+import { formatPhone } from '@/lib/phone'
 
 const ACADEMY_PAGE_SIZE = 20
 

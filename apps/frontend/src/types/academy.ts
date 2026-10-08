@@ -31,12 +31,12 @@ export const academyInfoSchema = z.object({
   representativeName: z.string().min(1, '대표자명을 입력해주세요.'),
   smsSenderNumber: z
     .string()
-    .optional()
     .refine(
       (value) => !value || PHONE_REGEX.test(onlyDigits(value)),
       '올바른 전화번호 형식이 아닙니다.',
     )
-    .transform((value) => (value ? onlyDigits(value) : value)),
+    .transform(onlyDigits)
+    .optional(),
 })
 
 export type AcademyInfoFormValues = z.infer<typeof academyInfoSchema>
@@ -44,12 +44,12 @@ export type AcademyInfoFormValues = z.infer<typeof academyInfoSchema>
 export const academySettingsSchema = z.object({
   representativePhone: z
     .string()
-    .optional()
     .refine(
       (value) => !value || PHONE_REGEX.test(onlyDigits(value)),
       '올바른 전화번호 형식이 아닙니다. (예: 032-123-4567)',
     )
-    .transform((value) => (value ? onlyDigits(value) : value)),
+    .transform(onlyDigits)
+    .optional(),
   address: z.string().optional(),
   academySlug: slugSchema,
   logo: academyInfoSchema.shape.logo,

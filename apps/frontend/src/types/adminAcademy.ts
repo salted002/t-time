@@ -26,11 +26,7 @@ export const adminAcademyUpdateSchema = z.object({
     // 하이픈 없이 입력해도 서버 중복 검사가 맞도록 항상 123-45-67890 형태로 보낸다
     .transform((value) => value.replace(/^(\d{3})-?(\d{2})-?(\d{5})$/, '$1-$2-$3')),
   representativeName: z.string().trim().min(1, '대표자명을 입력해주세요.'),
-  smsSenderNumber: z
-    .string()
-    .optional()
-    .refine((v) => !v || PHONE_REGEX.test(onlyDigits(v)), '올바른 전화번호 형식이 아닙니다.')
-    .transform((v) => (v ? onlyDigits(v) : v)),
+  smsSenderNumber: academyInfoSchema.shape.smsSenderNumber,
   logo: academyInfoSchema.shape.logo,
   userName: z.string().trim().min(1, '관리자 이름을 입력해주세요.'),
   userEmail: z

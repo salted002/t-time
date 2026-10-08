@@ -536,7 +536,7 @@ async function up(queryInterface) {
       business_number: '123-45-67890',
       owner_name: '김선주',
       logo_url: DEMO_LOGO_FILENAME,
-      phone: '032-123-4567',
+      phone: '0321234567',
       address: '경기도 부천시 상동로 123',
       sms_sender_number: '01012345678',
       subscription_status: 'FREE', // 10/12 발표에서 구독 흐름을 라이브로 보여주기 위해 FREE 유지
