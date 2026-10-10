@@ -56,7 +56,7 @@ export default function LoginPage() {
     try {
       // 데모 체험은 브라우저를 닫으면 세션이 끝나도록 rememberMe를 끈다.
       const demoUser = await login(DEMO_ACCOUNT.email, DEMO_ACCOUNT.password, false)
-      navigate(`/${demoUser.academySlug}/students`)
+      navigate(`/${demoUser.academySlug}/dashboard`)
     } catch (error) {
       showLoginError(error)
     } finally {
@@ -68,7 +68,7 @@ export default function LoginPage() {
     setIsSubmitting(true)
     try {
       const loggedInUser = await login(data.email, data.password, data.rememberMe)
-      navigate(`/${loggedInUser.academySlug}/students`)
+      navigate(`/${loggedInUser.academySlug}/dashboard`)
     } catch (error) {
       showLoginError(error)
     } finally {
