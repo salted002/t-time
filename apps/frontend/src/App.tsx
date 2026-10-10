@@ -8,7 +8,7 @@ import { ConfirmProvider } from '@/components/common/ConfirmDialog'
 
 import LandingPage from '@/pages/landing/LandingPage'
 import SignupPage from '@/pages/auth/SignupPage'
-import LoginPage from '@/pages/auth/loginPage'
+import LoginPage from './pages/auth/loginPage'
 import StudentListPage from '@/pages/students/StudentListPage'
 import StudentDetailPage from '@/pages/students/StudentDetailPage'
 import AcademySettingsPage from '@/pages/settings/AcademySettingsPage'
