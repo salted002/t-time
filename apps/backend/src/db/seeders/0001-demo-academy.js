@@ -18,7 +18,7 @@
  *   npm run seed --workspace=apps/backend
  *
  * 로고 업로드
- *  - "src/db/seedAssets/tomato-logo.png" 필요
+ *  - "src/db/seeders/assets/tomato-logo.png" 필요
  *  - Azure 모드면 시드가 Blob에 자동 업로드함.
  *
  * 되돌리기(삭제) — 다시 실행하기 전에 꼭 먼저 지워주세요, 안 그러면 학원이 중복 생성됩니다
@@ -40,7 +40,7 @@ const bcrypt = require('bcrypt')
 const { randomUUID, randomBytes } = require('crypto')
 
 const DEMO_LOGO_FILENAME = 'tomato-logo.png'
-const DEMO_LOGO_SOURCE = path.join(__dirname, '..', 'seedAssets', DEMO_LOGO_FILENAME)
+const DEMO_LOGO_SOURCE = path.join(__dirname, 'assets', DEMO_LOGO_FILENAME)
 
 // =====================================================================
 // 로고 업로드 함수
